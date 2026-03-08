@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dungeon RPG</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100dvh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    #canvas-wrapper {
+      width: 100%;
+      max-width: 800px;
+      flex-shrink: 0;
+    }
+
+    #canvas-wrapper canvas {
+      display: block;
+      width: 100% !important;
+      height: auto !important;
+      touch-action: none;
+    }
+
+    /* D-pad: タッチデバイスのみ表示 */
+    #dpad {
+      display: none;
+      width: 100%;
+      max-width: 800px;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 0 20px;
+      flex-shrink: 0;
+    }
+
+    @media (pointer: coarse) {
+      #dpad { display: flex; }
+    }
+
+    .dpad-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .dpad-btn {
+      width: 76px;
+      height: 76px;
+      background: #1a2035;
+      border: 2px solid #3d4f6b;
+      border-radius: 16px;
+      color: #c8d6e8;
+      font-size: 28px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background 80ms, border-color 80ms, transform 80ms, color 80ms;
+    }
+
+    .dpad-btn:active {
+      background: #243050;
+      border-color: #4fc3f7;
+      transform: scale(0.88);
+      color: #4fc3f7;
+    }
+
+    .dpad-center {
+      width: 76px;
+      height: 76px;
+    }
+
+    /* ミュートボタン */
+    #btn-mute {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      width: 42px;
+      height: 42px;
+      background: rgba(10, 10, 26, 0.85);
+      border: 1px solid #3d4f6b;
+      border-radius: 10px;
+      color: #c8d6e8;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #btn-mute:active { transform: scale(0.88); }
+  </style>
+</head>
+<body>
+  <button id="btn-mute" aria-label="ミュート切替">🔊</button>
+  <div id="canvas-wrapper"></div>
+
+  <div id="dpad">
+    <button class="dpad-btn" id="btn-up"    aria-label="上">▲</button>
+    <div class="dpad-row">
+      <button class="dpad-btn" id="btn-left"  aria-label="左">◀</button>
+      <div class="dpad-center"></div>
+      <button class="dpad-btn" id="btn-right" aria-label="右">▶</button>
+    </div>
+    <button class="dpad-btn" id="btn-down"  aria-label="下">▼</button>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
