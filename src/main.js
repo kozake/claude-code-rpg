@@ -13,6 +13,11 @@ const app = new Application({
 
 document.getElementById('canvas-wrapper').appendChild(app.view);
 
+// スマホでソフトキーボードが出るのを防ぐ
+// Pixi.js の accessibility plugin が tabindex="0" をcanvasに付与するため無効化する
+app.view.tabIndex = -1;
+app.renderer.plugins?.accessibility?.destroy();
+
 const game = new Game(app);
 
 // --- ミュートボタン ---
