@@ -30,59 +30,6 @@
       touch-action: none;
     }
 
-    /* D-pad: タッチデバイスのみ表示 */
-    #dpad {
-      display: none;
-      width: 100%;
-      max-width: 800px;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      padding: 14px 0 20px;
-      flex-shrink: 0;
-    }
-
-    @media (pointer: coarse) {
-      #dpad { display: flex; }
-    }
-
-    .dpad-row {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .dpad-btn {
-      width: 76px;
-      height: 76px;
-      background: #1a2035;
-      border: 2px solid #3d4f6b;
-      border-radius: 16px;
-      color: #c8d6e8;
-      font-size: 28px;
-      line-height: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      transition: background 80ms, border-color 80ms, transform 80ms, color 80ms;
-    }
-
-    .dpad-btn:active {
-      background: #243050;
-      border-color: #4fc3f7;
-      transform: scale(0.88);
-      color: #4fc3f7;
-    }
-
-    .dpad-center {
-      width: 76px;
-      height: 76px;
-    }
-
     /* ミュートボタン */
     #btn-mute {
       position: fixed;
@@ -109,16 +56,6 @@
 <body>
   <button id="btn-mute" aria-label="ミュート切替">🔊</button>
   <div id="canvas-wrapper"></div>
-
-  <div id="dpad">
-    <button class="dpad-btn" id="btn-up"    aria-label="上">▲</button>
-    <div class="dpad-row">
-      <button class="dpad-btn" id="btn-left"  aria-label="左">◀</button>
-      <div class="dpad-center"></div>
-      <button class="dpad-btn" id="btn-right" aria-label="右">▶</button>
-    </div>
-    <button class="dpad-btn" id="btn-down"  aria-label="下">▼</button>
-  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>

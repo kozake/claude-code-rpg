@@ -1,5 +1,6 @@
 import { Application } from 'pixi.js';
 import { Game } from './Game.js';
+import { Gamepad } from './Gamepad.js';
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLOR } from './constants.js';
 
 const app = new Application({
@@ -28,25 +29,8 @@ muteBtn?.addEventListener('click', () => {
   if (muteBtn) muteBtn.textContent = muted ? '🔇' : '🔊';
 });
 
-// --- 仮想Dパッド ---
-const dpadMap = {
-  'btn-up':    [ 0, -1],
-  'btn-down':  [ 0,  1],
-  'btn-left':  [-1,  0],
-  'btn-right': [ 1,  0],
-};
-
-for (const [id, [dx, dy]] of Object.entries(dpadMap)) {
-  const btn = document.getElementById(id);
-  if (!btn) continue;
-  // touchstart で即反応（click は遅延あり）
-  btn.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    game.move(dx, dy);
-  }, { passive: false });
-  // デスクトップでもクリックで動かせるようにフォールバック
-  btn.addEventListener('click', () => game.move(dx, dy));
-}
+// --- PixiJS 仮想Dパッド（タッチデバイスのみ表示） ---
+const gamepad = new Gamepad(app, (dx, dy) => game.move(dx, dy));
 
 // --- スワイプ操作（キャンバス上） ---
 let swipeStartX = 0;
@@ -61,6 +45,13 @@ app.view.addEventListener('touchstart', (e) => {
 
 app.view.addEventListener('touchend', (e) => {
   e.preventDefault();
+
+  // ゲームパッドボタンのタップはスワイプ扱いしない
+  if (gamepad.touched) {
+    gamepad.touched = false;
+    return;
+  }
+
   const dx = e.changedTouches[0].clientX - swipeStartX;
   const dy = e.changedTouches[0].clientY - swipeStartY;
 
