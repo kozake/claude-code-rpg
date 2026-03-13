@@ -1,7 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import {
   SCREEN_WIDTH, MAP_HEIGHT_PX, UI_HEIGHT, SCREEN_HEIGHT,
-  COLOR, MAX_FLOORS, ITEM_DEFS
+  COLOR, MAX_FLOORS
 } from './constants.js';
 
 const MAX_MESSAGES = 5;
@@ -128,44 +128,6 @@ export class UI {
     this._soulLabel.x = 100;
     this._soulLabel.y = 149;
     this.container.addChild(this._soulLabel);
-
-    // ── アイテムバッグ ─────────────────────────────────────────
-    this._drawBarLabel('ITEMS', 0x69f0ae, 14, 163);
-    this._itemSlots = [];
-    for (let i = 0; i < 2; i++) {
-      const slotX = 14 + i * 50;
-      const slotY = 173;
-      const slotW = 44;
-      const slotH = 24;
-
-      const gIcon = new Graphics();
-      this.container.addChild(gIcon);
-
-      const tCount = new Text('', {
-        fontFamily: PIXEL_FONT,
-        fontSize: 6,
-        fill: 0xffffff,
-        dropShadow: true,
-        dropShadowColor: 0x000000,
-        dropShadowDistance: 1,
-      });
-      this.container.addChild(tCount);
-
-      // キーバッジ（静的）
-      const tKey = new Text(`${i + 1}`, {
-        fontFamily: PIXEL_FONT,
-        fontSize: 6,
-        fill: 0x4a5a8a,
-        dropShadow: true,
-        dropShadowColor: 0x000000,
-        dropShadowDistance: 1,
-      });
-      tKey.x = slotX + 2;
-      tKey.y = slotY + slotH - 9;
-      this.container.addChild(tKey);
-
-      this._itemSlots.push({ gIcon, tCount, slotX, slotY, slotW, slotH });
-    }
 
     // ── メッセージログ ────────────────────────────────────────
     this._msgTexts = [];
@@ -298,99 +260,6 @@ export class UI {
     this._soulLabel.text = soulReady ? 'READY!' : '';
     this._soulLabel.style.fill = 0xffd700;
 
-    // アイテムバッグ
-    const groups = this._groupInventory(player.inventory);
-    for (let i = 0; i < this._itemSlots.length; i++) {
-      this._updateItemSlot(this._itemSlots[i], i < groups.length ? groups[i] : null);
-    }
-  }
-
-  _updateItemSlot(slot, group) {
-    const { gIcon, tCount, slotX: x, slotY: y, slotW: w, slotH: h } = slot;
-    gIcon.clear();
-
-    if (group) {
-      const def = ITEM_DEFS[group.key];
-      const cx = x + w / 2;
-      const cy = y + h / 2 - 1;
-
-      // 背景グロー
-      gIcon.beginFill(def.color, 0.10);
-      gIcon.drawRoundedRect(x, y, w, h, 4);
-      gIcon.endFill();
-      // 枠線
-      gIcon.lineStyle(1, def.color, 0.65);
-      gIcon.drawRoundedRect(x, y, w, h, 4);
-      gIcon.lineStyle(0);
-
-      // ミニポーションアイコン
-      this._drawMiniPotion(gIcon, cx - 6, cy, def);
-
-      // 個数バッジ
-      tCount.text = `x${group.count}`;
-      tCount.style.fill = def.color;
-      tCount.x = x + w - 16;
-      tCount.y = y + h / 2 - 4;
-    } else {
-      // 空スロット
-      gIcon.lineStyle(1, 0x1e2d4a, 0.5);
-      gIcon.drawRoundedRect(x, y, w, h, 4);
-      gIcon.lineStyle(0);
-      tCount.text = '';
-    }
-  }
-
-  _drawMiniPotion(g, cx, cy, def) {
-    const c  = def.color;
-    const cd = def.colorDark;
-
-    // ビンの胴体
-    g.beginFill(cd, 0.85);
-    g.drawEllipse(cx, cy + 3, 5, 6);
-    g.endFill();
-    g.beginFill(c, 0.90);
-    g.drawEllipse(cx, cy + 2, 4, 5);
-    g.endFill();
-
-    // 液体ハイライト
-    g.beginFill(0xffffff, 0.40);
-    g.drawEllipse(cx - 1.5, cy + 1, 1.5, 2.5);
-    g.endFill();
-
-    // 首
-    g.beginFill(cd);
-    g.drawRoundedRect(cx - 2, cy - 4, 4, 4, 1);
-    g.endFill();
-    g.beginFill(c, 0.75);
-    g.drawRoundedRect(cx - 1.5, cy - 3.5, 3, 3, 1);
-    g.endFill();
-
-    // コルク
-    g.beginFill(0xd7b07a);
-    g.drawRoundedRect(cx - 2, cy - 8, 4, 5, 1);
-    g.endFill();
-    g.beginFill(0xf5d9a0, 0.6);
-    g.drawRect(cx - 1, cy - 7, 1.5, 2.5);
-    g.endFill();
-
-    // 光の粒
-    g.beginFill(c, 0.65);
-    g.drawCircle(cx + 3, cy - 2, 1);
-    g.endFill();
-  }
-
-  _groupInventory(inventory) {
-    const groups = [];
-    const indices = {};
-    for (const key of inventory) {
-      if (key in indices) {
-        groups[indices[key]].count++;
-      } else {
-        indices[key] = groups.length;
-        groups.push({ key, count: 1 });
-      }
-    }
-    return groups;
   }
 
   addMessage(text, color = COLOR.GRAY) {

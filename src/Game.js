@@ -29,6 +29,8 @@ export class Game {
     // ゲーム中に一度でも出現した武器/防具のキーを記録（重複出現防止）
     this._seenWeapons = new Set();
 
+    this.gamepad = null; // setGamepad() で外部から注入される
+
     this._initLevel();
     this._bindKeys();
 
@@ -46,6 +48,18 @@ export class Game {
       this._tickAnimation(delta);
       this._tickCamera(delta);
     });
+  }
+
+  /** Gamepad インスタンスを受け取り、初期アイテム表示を反映する */
+  setGamepad(gamepad) {
+    this.gamepad = gamepad;
+    this._updateGamepad();
+  }
+
+  /** Gamepad のアイテムボタン表示を現在のインベントリに同期する */
+  _updateGamepad() {
+    if (!this.gamepad) return;
+    this.gamepad.updateItems(this._getInventoryGroups());
   }
 
   _tickCamera(delta) {
@@ -143,6 +157,7 @@ export class Game {
       const by = Math.floor(bossRoom.y + bossRoom.h / 2);
       this.enemies.push(new Enemy(this.worldContainer, bx, by, { ...BOSS_DEF }));
       this.ui.update(this.player, this.floor);
+      this._updateGamepad();
       this.ui.addMessage(`⚠ 最終階！ダークロードが待ち構えている！`, COLOR.RED);
     } else {
       const lastRoom = rooms[rooms.length - 1];
@@ -152,6 +167,7 @@ export class Game {
       this.map[sy][sx] = TILE.STAIRS;
       this.dungeon.drawStairs(sx, sy);
       this.ui.update(this.player, this.floor);
+      this._updateGamepad();
       this.ui.addMessage(`${this.floor}階へようこそ！`, COLOR.YELLOW);
     }
 
@@ -259,6 +275,7 @@ export class Game {
     }
 
     this.ui.update(this.player, this.floor);
+    this._updateGamepad();
   }
 
   /** インベントリのアイテムをキー別にまとめて返す */
@@ -305,6 +322,7 @@ export class Game {
       }
     }
     this.ui.update(this.player, this.floor);
+    this._updateGamepad();
   }
 
   _pickEnemyType() {
@@ -393,6 +411,7 @@ export class Game {
 
     this._enemyTurns();
     this.ui.update(this.player, this.floor);
+    this._updateGamepad();
 
     if (this.player.hp <= 0) {
       this.state = 'gameover';
@@ -558,6 +577,7 @@ export class Game {
     this._playerSpecialAttack(adjacent);
     this._enemyTurns();
     this.ui.update(this.player, this.floor);
+    this._updateGamepad();
 
     if (this.player.hp <= 0) {
       this.state = 'gameover';
