@@ -93,9 +93,9 @@ export const BOSS_DEF = {
   name: 'ダークロード',
   color: 0xef5350,
   colorDark: 0x7f0000,
-  maxHp: 200,
-  attack: 24,
-  defense: 8,
+  maxHp: 350,
+  attack: 32,
+  defense: 12,
   xp: 500,
   isBoss: true,
 };
