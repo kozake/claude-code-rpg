@@ -6,6 +6,7 @@ import { Item } from './Item.js';
 import { UI } from './UI.js';
 import { AudioManager } from './Audio.js';
 import { BattleEffects } from './BattleEffects.js';
+import { StoryScene } from './StoryScene.js';
 import {
   MAP_COLS, MAP_ROWS, TILE, TILE_SIZE, ENEMY_DEFS, BOSS_DEF, MAX_FLOORS, COLOR, ITEM_DEFS
 } from './constants.js';
@@ -13,7 +14,8 @@ import {
 export class Game {
   constructor(app) {
     this.app = app;
-    this.state = 'playing'; // 'playing' | 'gameover' | 'win'
+    // 'title' | 'opening' | 'playing' | 'gameover' | 'win' | 'ending'
+    this.state = 'title';
     this.floor = 1;
 
     this.worldContainer = new Container();
@@ -31,10 +33,9 @@ export class Game {
 
     this.gamepad = null; // setGamepad() で外部から注入される
 
-    this._initLevel();
     this._bindKeys();
 
-    // バトルエフェクト（_initLevel後に追加してエフェクトが最前面に来るようにする）
+    // バトルエフェクト
     this.effects = new BattleEffects(this.worldContainer, app);
 
     // 浮遊アニメーション＆カメラ
@@ -48,6 +49,25 @@ export class Game {
       this._tickAnimation(delta);
       this._tickCamera(delta);
     });
+
+    // ストーリーシーン（最後に追加して最前面へ）
+    this.storyScene = new StoryScene(app);
+    this.storyScene.showTitle(() => {
+      this.state = 'opening';
+      this.audio.start();
+      this.audio.resume();
+      this.storyScene.showOpening(() => {
+        this._startGame();
+      });
+    });
+  }
+
+  /** タイトル→オープニング終了後、実際にゲームを開始する */
+  _startGame() {
+    this.state = 'playing';
+    this.floor = 1;
+    this._seenWeapons = new Set();
+    this._initLevel();
   }
 
   /** Gamepad インスタンスを受け取り、初期アイテム表示を反映する */
@@ -348,10 +368,22 @@ export class Game {
 
   _bindKeys() {
     window.addEventListener('keydown', (e) => {
-      // ミュート切替
+      // ミュート切替（常に有効）
       if (e.key === 'm' || e.key === 'M') {
         const muted = this.audio.toggleMute();
-        this.ui.addMessage(muted ? '🔇 ミュート' : '🔊 サウンドON', COLOR.GRAY);
+        if (this.state === 'playing') this.ui.addMessage(muted ? '🔇 ミュート' : '🔊 サウンドON', COLOR.GRAY);
+        return;
+      }
+
+      // ストーリーシーン中の入力
+      if (this.state === 'title' || this.state === 'opening' || this.state === 'ending') {
+        if ((e.key === 's' || e.key === 'S') && this.state !== 'title') {
+          this.storyScene.onSkip();
+          return;
+        }
+        this.audio.start();
+        this.audio.resume();
+        this.storyScene.onInput();
         return;
       }
 
@@ -450,14 +482,14 @@ export class Game {
       this.audio.playEnemyDie();
       this.ui.addMessage(`${enemy.def.name}を倒した！ XP +${gainedXp}`, COLOR.YELLOW);
 
-      // ボス撃破 → ゲームクリア
+      // ボス撃破 → エンディングへ
       if (enemy.def.isBoss) {
         this.effects.spawnBossDeathEffect(ex, ey);
         this.effects.screenShake(10, 25);
-        this.state = 'win';
+        this.state = 'ending';
         this.audio.stopBGM();
         this.audio.playWin();
-        this.ui.showMessage('ダークロードを倒した！\nゲームクリア！', COLOR.GREEN);
+        this._startEnding();
         return;
       }
 
@@ -587,6 +619,34 @@ export class Game {
     }
   }
 
+  /** ボス撃破後、少し間を置いてからエンディングシーンを開始 */
+  _startEnding() {
+    let waitFrames = 100; // 約1.7秒
+    const tick = (delta) => {
+      waitFrames -= delta;
+      if (waitFrames <= 0) {
+        this.app.ticker.remove(tick);
+        this.storyScene.showEnding(() => {
+          this.state = 'win';
+          this.ui.showMessage(
+            '勇者の伝説は永遠に語り継がれる…\nゲームクリア！',
+            COLOR.GREEN
+          );
+        });
+      }
+    };
+    this.app.ticker.add(tick);
+  }
+
+  /** タッチ操作のタップ（スワイプなし）をストーリーシーンへ転送 */
+  handleTap() {
+    if (this.state === 'title' || this.state === 'opening' || this.state === 'ending') {
+      this.audio.start();
+      this.audio.resume();
+      this.storyScene.onInput();
+    }
+  }
+
   _playerSpecialAttack(enemy) {
     const dmg = Math.max(1, this.player.attack * 3);
     this.player.soul = 0;
@@ -618,10 +678,10 @@ export class Game {
       if (enemy.def.isBoss) {
         this.effects.spawnBossDeathEffect(ex, ey);
         this.effects.screenShake(10, 25);
-        this.state = 'win';
+        this.state = 'ending';
         this.audio.stopBGM();
         this.audio.playWin();
-        this.ui.showMessage('ダークロードを倒した！\nゲームクリア！', COLOR.GREEN);
+        this._startEnding();
         return;
       }
 
