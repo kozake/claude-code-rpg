@@ -194,7 +194,7 @@ export class Game {
         this._seenWeapons.add(itemKey);
       }
 
-      this.items.push(new Item(this.worldContainer, ix, iy, def));
+      this.items.push(new Item(this.worldContainer, ix, iy, def, itemKey));
       usedTiles.add(tileKey);
       placed++;
     }
@@ -233,16 +233,10 @@ export class Game {
     this.audio.playItemPickup();
 
     switch (def.effect) {
-      case 'heal': {
-        const before = this.player.hp;
-        this.player.hp = Math.min(this.player.maxHp, this.player.hp + def.value);
-        const gained = this.player.hp - before;
-        this.ui.addMessage(`${def.name}を入手！ HP +${gained}`, COLOR.GREEN);
-        break;
-      }
+      case 'heal':
       case 'healFull': {
-        this.player.hp = this.player.maxHp;
-        this.ui.addMessage(`${def.name}を入手！ HP 全回復！`, COLOR.GREEN);
+        this.player.inventory.push(item.itemKey);
+        this.ui.addMessage(`${def.name}をバッグに入れた！`, COLOR.GREEN);
         break;
       }
       case 'attack': {
@@ -264,6 +258,52 @@ export class Game {
       }
     }
 
+    this.ui.update(this.player, this.floor);
+  }
+
+  /** インベントリのアイテムをキー別にまとめて返す */
+  _getInventoryGroups() {
+    const groups = [];
+    const indices = {};
+    for (const key of this.player.inventory) {
+      if (key in indices) {
+        groups[indices[key]].count++;
+      } else {
+        indices[key] = groups.length;
+        groups.push({ key, def: ITEM_DEFS[key], count: 1 });
+      }
+    }
+    return groups;
+  }
+
+  /** スロット番号(0始まり)のアイテムを使う */
+  _useItem(groupIndex) {
+    if (this.state !== 'playing') return;
+    const groups = this._getInventoryGroups();
+    if (groupIndex >= groups.length) {
+      this.ui.addMessage('アイテムがない！', COLOR.GRAY);
+      return;
+    }
+    const { key, def } = groups[groupIndex];
+    const idx = this.player.inventory.indexOf(key);
+    this.player.inventory.splice(idx, 1);
+
+    switch (def.effect) {
+      case 'heal': {
+        const before = this.player.hp;
+        this.player.hp = Math.min(this.player.maxHp, this.player.hp + def.value);
+        const gained = this.player.hp - before;
+        this.audio.playItemPickup();
+        this.ui.addMessage(`${def.name}を使った！ HP +${gained}`, COLOR.GREEN);
+        break;
+      }
+      case 'healFull': {
+        this.player.hp = this.player.maxHp;
+        this.audio.playItemPickup();
+        this.ui.addMessage(`${def.name}を使った！ HP 全回復！`, COLOR.GREEN);
+        break;
+      }
+    }
     this.ui.update(this.player, this.floor);
   }
 
@@ -308,6 +348,12 @@ export class Game {
         case ' ':
           e.preventDefault();
           this._trySpecialAttack();
+          return;
+        case '1':
+          this._useItem(0);
+          return;
+        case '2':
+          this._useItem(1);
           return;
         default: return;
       }

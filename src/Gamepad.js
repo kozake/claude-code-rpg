@@ -22,8 +22,9 @@ export class Gamepad {
    * @param {import('pixi.js').Application} app
    * @param {(dx: number, dy: number) => void} onMove
    * @param {() => void} onSpecial
+   * @param {(index: number) => void} onUseItem
    */
-  constructor(app, onMove, onSpecial) {
+  constructor(app, onMove, onSpecial, onUseItem) {
     this.container = new Container();
     this.container.visible = false;
     app.stage.addChild(this.container);
@@ -69,13 +70,25 @@ export class Gamepad {
     }
 
     // 必殺技ボタン（右下）
+    const sx = SCREEN_WIDTH - MARGIN - BTN;
+    const sy = MAP_HEIGHT_PX - MARGIN - BTN;
     if (onSpecial) {
-      const sx = SCREEN_WIDTH - MARGIN - BTN;
-      const sy = MAP_HEIGHT_PX - MARGIN - BTN;
       this._makeButton(sx, sy, '✨', () => {
         this.touched = true;
         onSpecial();
       }, true);
+    }
+
+    // アイテム使用ボタン（必殺技ボタンの上に積む）
+    if (onUseItem) {
+      this._makeButton(sx, sy - STEP, '[2]', () => {
+        this.touched = true;
+        onUseItem(1);
+      });
+      this._makeButton(sx, sy - STEP * 2, '[1]', () => {
+        this.touched = true;
+        onUseItem(0);
+      });
     }
   }
 

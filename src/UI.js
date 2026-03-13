@@ -1,7 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import {
   SCREEN_WIDTH, MAP_HEIGHT_PX, UI_HEIGHT, SCREEN_HEIGHT,
-  COLOR, MAX_FLOORS
+  COLOR, MAX_FLOORS, ITEM_DEFS
 } from './constants.js';
 
 const MAX_MESSAGES = 5;
@@ -129,6 +129,24 @@ export class UI {
     this._soulLabel.y = 149;
     this.container.addChild(this._soulLabel);
 
+    // ── アイテムバッグ ─────────────────────────────────────────
+    this._drawBarLabel('ITEMS', 0x69f0ae, 14, 163);
+    this._itemSlots = [];
+    for (let i = 0; i < 2; i++) {
+      const t = new Text('', {
+        fontFamily: PIXEL_FONT,
+        fontSize: 7,
+        fill: 0x334455,
+        dropShadow: true,
+        dropShadowColor: 0x000000,
+        dropShadowDistance: 1,
+      });
+      t.x = 14;
+      t.y = 175 + i * 13;
+      this.container.addChild(t);
+      this._itemSlots.push(t);
+    }
+
     // ── メッセージログ ────────────────────────────────────────
     this._msgTexts = [];
     for (let i = 0; i < MAX_MESSAGES; i++) {
@@ -146,7 +164,7 @@ export class UI {
     }
 
     // 操作ヒント
-    const hint = new Text('WASD/Arrow=Move  Space=Soul  >=Stairs', {
+    const hint = new Text('WASD/Arrow=Move  Space=Soul  >=Stairs  1/2=アイテム使用', {
       fontFamily: PIXEL_FONT,
       fontSize: 6,
       fill: 0x334455,
@@ -259,6 +277,34 @@ export class UI {
     }
     this._soulLabel.text = soulReady ? 'READY!' : '';
     this._soulLabel.style.fill = 0xffd700;
+
+    // アイテムバッグ
+    const groups = this._groupInventory(player.inventory);
+    for (let i = 0; i < this._itemSlots.length; i++) {
+      if (i < groups.length) {
+        const { key, count } = groups[i];
+        const def = ITEM_DEFS[key];
+        this._itemSlots[i].text = `[${i + 1}] ${def.name} x${count}`;
+        this._itemSlots[i].style.fill = def.color;
+      } else {
+        this._itemSlots[i].text = `[${i + 1}] ---`;
+        this._itemSlots[i].style.fill = 0x334455;
+      }
+    }
+  }
+
+  _groupInventory(inventory) {
+    const groups = [];
+    const indices = {};
+    for (const key of inventory) {
+      if (key in indices) {
+        groups[indices[key]].count++;
+      } else {
+        indices[key] = groups.length;
+        groups.push({ key, count: 1 });
+      }
+    }
+    return groups;
   }
 
   addMessage(text, color = COLOR.GRAY) {
