@@ -151,7 +151,7 @@ export class StoryScene {
     this._counterText.visible = false;
     this._panel.visible = false;
 
-    this._promptText.text = '~ PRESS ANY KEY TO START ~';
+    this._promptText.text = '~ TAP OR PRESS ANY KEY ~';
     this._promptText.visible = true;
     this._promptText.alpha = 1;
 
@@ -249,7 +249,7 @@ export class StoryScene {
 
   _showWaitPrompt() {
     this._waitingForInput = true;
-    this._promptText.text = '[ PRESS ANY KEY ]';
+    this._promptText.text = '[ TAP OR PRESS KEY ]';
     this._promptText.visible = true;
     this._promptText.alpha = 1;
   }

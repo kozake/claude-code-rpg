@@ -47,6 +47,14 @@ app.view.addEventListener('touchstart', (e) => {
 app.view.addEventListener('touchend', (e) => {
   e.preventDefault();
 
+  // ストーリー/タイトル画面中はゲームパッドが非表示のため、
+  // あらゆるタッチ（スワイプ含む）でシーンを進める
+  if (game.state === 'title' || game.state === 'opening' || game.state === 'ending') {
+    gamepad.touched = false;
+    game.handleTap();
+    return;
+  }
+
   // ゲームパッドボタンのタップはスワイプ扱いしない
   if (gamepad.touched) {
     gamepad.touched = false;
