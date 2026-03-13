@@ -5,6 +5,7 @@ import { Enemy } from './Enemy.js';
 import { Item } from './Item.js';
 import { UI } from './UI.js';
 import { AudioManager } from './Audio.js';
+import { BattleEffects } from './BattleEffects.js';
 import {
   MAP_COLS, MAP_ROWS, TILE, TILE_SIZE, ENEMY_DEFS, BOSS_DEF, MAX_FLOORS, COLOR, ITEM_DEFS
 } from './constants.js';
@@ -30,6 +31,9 @@ export class Game {
 
     this._initLevel();
     this._bindKeys();
+
+    // バトルエフェクト（_initLevel後に追加してエフェクトが最前面に来るようにする）
+    this.effects = new BattleEffects(this.worldContainer, app);
 
     // 浮遊アニメーション
     this._animTime = 0;
@@ -313,8 +317,14 @@ export class Game {
     this.audio.playAttack();
     this.ui.addMessage(`${enemy.def.name}に ${dmg} ダメージ！`, COLOR.CYAN);
 
+    // ヒットエフェクト＆ダメージ数値
+    this.effects.spawnHitEffect(enemy.gridX, enemy.gridY, enemy.def.color ?? 0x4fc3f7);
+    this.effects.spawnDamageNumber(enemy.gridX, enemy.gridY, dmg, 0x4fc3f7);
+
     if (!enemy.alive) {
       const gainedXp = enemy.def.xp;
+      const ex = enemy.gridX;
+      const ey = enemy.gridY;
       this.enemies = this.enemies.filter(e => e !== enemy);
       this.player.xp += gainedXp;
       this.audio.playEnemyDie();
@@ -322,6 +332,8 @@ export class Game {
 
       // ボス撃破 → ゲームクリア
       if (enemy.def.isBoss) {
+        this.effects.spawnBossDeathEffect(ex, ey);
+        this.effects.screenShake(10, 25);
         this.state = 'win';
         this.audio.stopBGM();
         this.audio.playWin();
@@ -329,10 +341,14 @@ export class Game {
         return;
       }
 
+      // 通常敵の死亡エフェクト
+      this.effects.spawnDeathEffect(ex, ey, enemy.def.color ?? 0xff8800);
+
       if (this.player.xp >= this.player.xpToNext) {
         this.player.levelUp();
         this.audio.playLevelUp();
         this.ui.addMessage(`レベルアップ！ Lv.${this.player.level}`, COLOR.PURPLE);
+        this.effects.spawnLevelUpEffect(this.player.gridX, this.player.gridY);
       }
     }
   }
@@ -351,6 +367,11 @@ export class Game {
         this.player.flash();
         this.audio.playHit();
         this.ui.addMessage(`${enemy.def.name}の攻撃！ ${dmg} ダメージ`, COLOR.RED);
+
+        // プレイヤーへのダメージエフェクト
+        this.effects.spawnPlayerDamageNumber(this.player.gridX, this.player.gridY, dmg);
+        const shakeStrength = enemy.def.isBoss ? 8 : 4;
+        this.effects.screenShake(shakeStrength, 10);
       } else if (!enemy.def.isBoss && dist <= 8) {
         this._moveEnemyToward(enemy, dx, dy);
       } else if (!enemy.def.isBoss) {
