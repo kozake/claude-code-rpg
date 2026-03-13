@@ -241,12 +241,28 @@ export class Player {
   _updatePosition() {
     this.container.x = this.gridX * TILE_SIZE;
     this.container.y = this.gridY * TILE_SIZE;
+    this._tweenFromX = this.container.x;
+    this._tweenFromY = this.container.y;
+    this._tweenProgress = 1;
   }
 
   move(nx, ny) {
+    // スムーズ移動: 現在の描画位置からtween
+    this._tweenFromX = this.container.x;
+    this._tweenFromY = this.container.y;
+    this._tweenProgress = 0;
     this.gridX = nx;
     this.gridY = ny;
-    this._updatePosition();
+  }
+
+  /** tweenを毎フレーム進める。Game._tickAnimationから呼ぶ */
+  updateTween(delta) {
+    if (this._tweenProgress >= 1) return;
+    this._tweenProgress = Math.min(1, this._tweenProgress + delta * 0.28);
+    const ease = 1 - Math.pow(1 - this._tweenProgress, 3);
+    this.container.x = this._tweenFromX + (this.gridX * TILE_SIZE - this._tweenFromX) * ease;
+    // Y は bob アニメが上書きするため gridY 位置のみ計算
+    this._tweenBaseY = this._tweenFromY + (this.gridY * TILE_SIZE - this._tweenFromY) * ease;
   }
 
   setPosition(nx, ny) {

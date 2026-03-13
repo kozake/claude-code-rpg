@@ -845,9 +845,20 @@ export class Enemy {
   }
 
   move(nx, ny) {
+    this._tweenFromX = this.container.x;
+    this._tweenFromY = this.container.y;
+    this._tweenProgress = 0;
     this.gridX = nx;
     this.gridY = ny;
-    this._updatePosition();
+  }
+
+  updateTween(delta) {
+    if (this._tweenProgress >= 1) return;
+    this._tweenProgress = Math.min(1, (this._tweenProgress || 0) + delta * 0.26);
+    const ease = 1 - Math.pow(1 - this._tweenProgress, 3);
+    this.container.x = this._tweenFromX + (this.gridX * TILE_SIZE - this._tweenFromX) * ease;
+    this._tweenBaseY = (this._tweenFromY || this.gridY * TILE_SIZE) +
+      (this.gridY * TILE_SIZE - (this._tweenFromY || this.gridY * TILE_SIZE)) * ease;
   }
 
   takeDamage(dmg) {
@@ -863,6 +874,10 @@ export class Enemy {
   _updatePosition() {
     this.container.x = this.gridX * TILE_SIZE;
     this.container.y = this.gridY * TILE_SIZE;
+    this._tweenFromX = this.container.x;
+    this._tweenFromY = this.container.y;
+    this._tweenBaseY = this.container.y;
+    this._tweenProgress = 1;
   }
 
   destroy() {

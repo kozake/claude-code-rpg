@@ -48,7 +48,7 @@ class DamageNumber {
 
     this.text = new Text(label, {
       fontSize: 15,
-      fontFamily: 'monospace',
+      fontFamily: '"Press Start 2P", monospace',
       fontWeight: 'bold',
       fill: color,
       stroke: 0x000000,
@@ -92,6 +92,61 @@ export class BattleEffects {
     this.shakeIntensity = 0;
 
     app.ticker.add((delta) => this._tick(delta));
+  }
+
+  /** 剣撃の軌跡エフェクト（スラッシュアーク） */
+  spawnSlashEffect(fromGridX, fromGridY, toGridX, toGridY) {
+    const fx = fromGridX * TILE_SIZE + TILE_SIZE / 2;
+    const fy = fromGridY * TILE_SIZE + TILE_SIZE / 2;
+    const tx = toGridX * TILE_SIZE + TILE_SIZE / 2;
+    const ty = toGridY * TILE_SIZE + TILE_SIZE / 2;
+
+    // 攻撃方向ベクトル
+    const dx = tx - fx;
+    const dy = ty - fy;
+    const angle = Math.atan2(dy, dx);
+
+    // スラッシュアーク（複数の線分で弧を描く）
+    const arcColors = [0xffffff, 0x80deea, 0x4fc3f7];
+    for (let layer = 0; layer < 3; layer++) {
+      const gfx = new Graphics();
+      const spread = 0.55 - layer * 0.12;
+      const arcPoints = [];
+      const steps = 8;
+      const radius = 28 + layer * 4;
+
+      for (let i = 0; i <= steps; i++) {
+        const a = angle - spread + (i / steps) * spread * 2;
+        arcPoints.push(
+          tx + Math.cos(a) * (radius - i * 1.5),
+          ty + Math.sin(a) * (radius - i * 1.5),
+        );
+      }
+
+      gfx.lineStyle(3 - layer, arcColors[layer], 0.9 - layer * 0.2);
+      gfx.moveTo(arcPoints[0], arcPoints[1]);
+      for (let i = 2; i < arcPoints.length; i += 2) {
+        gfx.lineTo(arcPoints[i], arcPoints[i + 1]);
+      }
+      gfx.lineStyle(0);
+      this.effectContainer.addChild(gfx);
+
+      // フェードアウト
+      let life = 12 - layer * 2;
+      const maxLife = life;
+      const update = (delta) => {
+        life -= delta;
+        if (life <= 0) { gfx.destroy(); return; }
+        gfx.alpha = (life / maxLife) * (0.9 - layer * 0.2);
+        gfx.scale.set(1 + (1 - life / maxLife) * 0.3);
+      };
+      if (!this._flashCallbacks) this._flashCallbacks = [];
+      const wrapped = (delta) => {
+        update(delta);
+        if (life <= 0) this._flashCallbacks = this._flashCallbacks.filter(c => c !== wrapped);
+      };
+      this._flashCallbacks.push(wrapped);
+    }
   }
 
   /** プレイヤーが敵を攻撃したときのヒットエフェクト */

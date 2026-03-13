@@ -6,6 +6,7 @@ import { Item } from './Item.js';
 import { UI } from './UI.js';
 import { AudioManager } from './Audio.js';
 import { BattleEffects } from './BattleEffects.js';
+import { FogOfWar } from './FogOfWar.js';
 import {
   MAP_COLS, MAP_ROWS, TILE, TILE_SIZE, ENEMY_DEFS, BOSS_DEF, MAX_FLOORS, COLOR, ITEM_DEFS
 } from './constants.js';
@@ -26,33 +27,69 @@ export class Game {
     this.stairs = null;
     this.ui = new UI(app);
     this.audio = new AudioManager();
+    this.fog = new FogOfWar(this.worldContainer);
     // ゲーム中に一度でも出現した武器/防具のキーを記録（重複出現防止）
     this._seenWeapons = new Set();
 
     this._initLevel();
     this._bindKeys();
 
-    // バトルエフェクト（_initLevel後に追加してエフェクトが最前面に来るようにする）
+    // バトルエフェクト（_initLevel後・fog後に追加してエフェクトが最前面に来るようにする）
     this.effects = new BattleEffects(this.worldContainer, app);
 
-    // 浮遊アニメーション
+    // 初期 fog 更新
+    if (this.player) this.fog.update(this.player.gridX, this.player.gridY);
+
+    // 浮遊アニメーション＆カメラ
     this._animTime = 0;
+    this._camX = 0;
+    this._camY = 0;
+    this._camTargetX = 0;
+    this._camTargetY = 0;
     app.ticker.add((delta) => {
       this._animTime += delta * 0.03;
-      this._tickAnimation();
+      this._tickAnimation(delta);
+      this._tickCamera(delta);
     });
   }
 
-  _tickAnimation() {
+  _tickCamera(delta) {
+    // プレイヤー位置からカメラのマイクロオフセットを計算（最大±12px）
     if (this.player) {
+      const MAP_CENTER_X = 400;
+      const MAP_CENTER_Y = 320;
+      const px = this.player.gridX * 40 + 20;
+      const py = this.player.gridY * 40 + 20;
+      const offX = (px - MAP_CENTER_X) / MAP_CENTER_X * -10;
+      const offY = (py - MAP_CENTER_Y) / MAP_CENTER_Y * -8;
+      this._camTargetX = offX;
+      this._camTargetY = offY;
+    }
+    // スムーズに追従
+    const speed = 0.07 * delta;
+    this._camX += (this._camTargetX - this._camX) * speed;
+    this._camY += (this._camTargetY - this._camY) * speed;
+
+    // シェイク中は上書きしない
+    if (this.effects && this.effects.shakeFrames > 0) return;
+    this.worldContainer.x = Math.round(this._camX);
+    this.worldContainer.y = Math.round(this._camY);
+  }
+
+  _tickAnimation(delta) {
+    if (this.player) {
+      this.player.updateTween(delta);
       const bob = Math.sin(this._animTime * 2.8) * 1.8;
-      this.player.container.y = this.player.gridY * TILE_SIZE + bob;
+      const baseY = this.player._tweenBaseY ?? this.player.gridY * TILE_SIZE;
+      this.player.container.y = baseY + bob;
     }
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue;
+      enemy.updateTween(delta);
       const phase = enemy.gridX * 0.9 + enemy.gridY * 0.4;
       const bob = Math.sin(this._animTime * 2.2 + phase) * 1.4;
-      enemy.container.y = enemy.gridY * TILE_SIZE + bob;
+      const baseY = enemy._tweenBaseY ?? enemy.gridY * TILE_SIZE;
+      enemy.container.y = baseY + bob;
     }
   }
 
@@ -62,6 +99,7 @@ export class Game {
     this.enemies = [];
     this.items.forEach(item => item.destroy());
     this.items = [];
+    this.fog.reset();
 
     const { map, rooms } = this.dungeon.generate();
     this.map = map;
@@ -115,6 +153,9 @@ export class Game {
     }
 
     this._placeItems(rooms);
+
+    // fog 初期化（プレイヤー開始位置を可視化）
+    if (this.player) this.fog.update(this.player.gridX, this.player.gridY);
   }
 
   _placeItems(rooms) {
@@ -293,6 +334,7 @@ export class Game {
       this._playerAttack(enemy);
     } else {
       this.player.move(nx, ny);
+      this.fog.update(nx, ny);
 
       if (this.map[ny][nx] === TILE.STAIRS) {
         this.audio.playStairs();
@@ -321,7 +363,8 @@ export class Game {
     this.audio.playAttack();
     this.ui.addMessage(`${enemy.def.name}に ${dmg} ダメージ！`, COLOR.CYAN);
 
-    // ヒットエフェクト＆ダメージ数値
+    // スラッシュ軌跡 → ヒットエフェクト＆ダメージ数値
+    this.effects.spawnSlashEffect(this.player.gridX, this.player.gridY, enemy.gridX, enemy.gridY);
     this.effects.spawnHitEffect(enemy.gridX, enemy.gridY, enemy.def.color ?? 0x4fc3f7);
     this.effects.spawnDamageNumber(enemy.gridX, enemy.gridY, dmg, 0x4fc3f7);
 
