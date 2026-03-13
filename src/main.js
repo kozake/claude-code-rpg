@@ -30,7 +30,7 @@ muteBtn?.addEventListener('click', () => {
 });
 
 // --- PixiJS 仮想Dパッド（タッチデバイスのみ表示） ---
-const gamepad = new Gamepad(app, (dx, dy) => game.move(dx, dy), () => game._trySpecialAttack());
+const gamepad = new Gamepad(app, (dx, dy) => game.move(dx, dy), () => game._trySpecialAttack(), (idx) => game._useItem(idx));
 
 // --- スワイプ操作（キャンバス上） ---
 let swipeStartX = 0;
