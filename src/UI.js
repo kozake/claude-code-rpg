@@ -5,6 +5,7 @@ import {
 } from './constants.js';
 
 const MAX_MESSAGES = 5;
+const PIXEL_FONT = '"Press Start 2P", monospace';
 
 export class UI {
   constructor(app) {
@@ -17,154 +18,144 @@ export class UI {
   }
 
   _buildLayout(app) {
-    // Background
+    // ── 背景 ──────────────────────────────────────────────────
     const bg = new Graphics();
-    bg.beginFill(COLOR.UI_BG);
+    // メイン背景
+    bg.beginFill(0x0a0d1a);
     bg.drawRect(0, 0, SCREEN_WIDTH, UI_HEIGHT);
     bg.endFill();
 
-    // Divider
-    bg.beginFill(COLOR.WALL_TOP || 0x5c5c8a);
-    bg.drawRect(0, 0, SCREEN_WIDTH, 2);
+    // 上部の装飾ライン（グラデーション風・多重ライン）
+    bg.beginFill(0x4a5a8a, 0.9);
+    bg.drawRect(0, 0, SCREEN_WIDTH, 3);
+    bg.endFill();
+    bg.beginFill(0x2a3a6a, 0.7);
+    bg.drawRect(0, 3, SCREEN_WIDTH, 2);
+    bg.endFill();
+
+    // 内側のパネル背景（左）
+    bg.beginFill(0x0c1020, 0.85);
+    bg.drawRoundedRect(6, 8, 210, UI_HEIGHT - 14, 4);
+    bg.endFill();
+    // 内側のパネル背景（右）
+    bg.beginFill(0x060810, 0.9);
+    bg.drawRoundedRect(222, 8, SCREEN_WIDTH - 228, UI_HEIGHT - 14, 4);
+    bg.endFill();
+
+    // パネル枠線（左）
+    bg.lineStyle(1, 0x2a3a6a, 0.8);
+    bg.drawRoundedRect(6, 8, 210, UI_HEIGHT - 14, 4);
+    bg.lineStyle(0);
+
+    // パネル枠線（右）
+    bg.lineStyle(1, 0x1e2d4a, 0.8);
+    bg.drawRoundedRect(222, 8, SCREEN_WIDTH - 228, UI_HEIGHT - 14, 4);
+    bg.lineStyle(0);
+
+    // 区切り線
+    bg.beginFill(0x2a3a6a, 0.6);
+    bg.drawRect(218, 8, 2, UI_HEIGHT - 14);
     bg.endFill();
 
     this.container.addChild(bg);
 
-    // ── Left panel ─────────────────────────────
-    // Stats text line 1: Lv / Floor
+    // ── Lv / Floor テキスト ──────────────────────────────────
     this._statsLine1 = new Text('', {
-      fontFamily: 'monospace',
-      fontSize: 13,
-      fill: COLOR.WHITE,
+      fontFamily: PIXEL_FONT,
+      fontSize: 8,
+      fill: COLOR.YELLOW,
+      dropShadow: true,
+      dropShadowColor: 0x000000,
+      dropShadowDistance: 1,
     });
-    this._statsLine1.x = 10;
-    this._statsLine1.y = 6;
+    this._statsLine1.x = 14;
+    this._statsLine1.y = 14;
     this.container.addChild(this._statsLine1);
 
-    // Stats text line 2: ATK / DEF
+    // ATK / DEF テキスト
     this._statsLine2 = new Text('', {
-      fontFamily: 'monospace',
-      fontSize: 13,
+      fontFamily: PIXEL_FONT,
+      fontSize: 8,
       fill: COLOR.CYAN,
+      dropShadow: true,
+      dropShadowColor: 0x000000,
+      dropShadowDistance: 1,
     });
-    this._statsLine2.x = 10;
-    this._statsLine2.y = 22;
+    this._statsLine2.x = 14;
+    this._statsLine2.y = 28;
     this.container.addChild(this._statsLine2);
 
-    // HP bar BG
-    this._hpBarBg = new Graphics();
-    this._hpBarBg.beginFill(COLOR.HP_BG);
-    this._hpBarBg.drawRect(10, 42, 200, 14);
-    this._hpBarBg.endFill();
-    this.container.addChild(this._hpBarBg);
-
+    // ── HP バー ───────────────────────────────────────────────
+    this._drawBarLabel('HP', 0xf44336, 14, 43);
+    this._hpBarBg = this._makeBarBg(14, 54, 200, 12);
     this._hpBarFill = new Graphics();
     this.container.addChild(this._hpBarFill);
-
-    this._hpLabel = new Text('HP', {
-      fontFamily: 'monospace',
-      fontSize: 10,
-      fill: COLOR.GRAY,
+    this._hpValueText = new Text('', {
+      fontFamily: PIXEL_FONT, fontSize: 7, fill: 0xffffff,
+      dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 1,
     });
-    this._hpLabel.x = 10;
-    this._hpLabel.y = 59;
-    this.container.addChild(this._hpLabel);
+    this._hpValueText.x = 14;
+    this._hpValueText.y = 68;
+    this.container.addChild(this._hpValueText);
 
-    // XP bar BG
-    this._xpBarBg = new Graphics();
-    this._xpBarBg.beginFill(COLOR.HP_BG);
-    this._xpBarBg.drawRect(10, 78, 200, 10);
-    this._xpBarBg.endFill();
-    this.container.addChild(this._xpBarBg);
-
+    // ── XP バー ───────────────────────────────────────────────
+    this._drawBarLabel('XP', 0x9c27b0, 14, 82);
+    this._xpBarBg = this._makeBarBg(14, 93, 200, 8);
     this._xpBarFill = new Graphics();
     this.container.addChild(this._xpBarFill);
-
-    this._xpLabel = new Text('XP', {
-      fontFamily: 'monospace',
-      fontSize: 10,
-      fill: COLOR.GRAY,
+    this._xpValueText = new Text('', {
+      fontFamily: PIXEL_FONT, fontSize: 7, fill: 0xce93d8,
+      dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 1,
     });
-    this._xpLabel.x = 10;
-    this._xpLabel.y = 91;
-    this.container.addChild(this._xpLabel);
+    this._xpValueText.x = 14;
+    this._xpValueText.y = 103;
+    this.container.addChild(this._xpValueText);
 
-    // Floor progress bar BG
-    this._floorBarBg = new Graphics();
-    this._floorBarBg.beginFill(COLOR.HP_BG);
-    this._floorBarBg.drawRect(10, 112, 200, 8);
-    this._floorBarBg.endFill();
-    this.container.addChild(this._floorBarBg);
-
+    // ── DEPTH バー ────────────────────────────────────────────
+    this._drawBarLabel('DEPTH', 0xe2c05a, 14, 117);
+    this._floorBarBg = this._makeBarBg(14, 128, 200, 6);
     this._floorBarFill = new Graphics();
     this.container.addChild(this._floorBarFill);
 
-    this._floorLabel = new Text('', {
-      fontFamily: 'monospace',
-      fontSize: 10,
-      fill: 0x7a8fa8,
-    });
-    this._floorLabel.x = 10;
-    this._floorLabel.y = 123;
-    this.container.addChild(this._floorLabel);
-
-    // Soul gauge BG
-    this._soulBarBg = new Graphics();
-    this._soulBarBg.beginFill(COLOR.HP_BG);
-    this._soulBarBg.drawRect(10, 136, 200, 8);
-    this._soulBarBg.endFill();
-    this.container.addChild(this._soulBarBg);
-
+    // ── SOUL ゲージ ───────────────────────────────────────────
+    this._drawBarLabel('SOUL', 0xce93d8, 14, 138);
+    this._soulBarBg = this._makeBarBg(14, 149, 200, 6);
     this._soulBarFill = new Graphics();
     this.container.addChild(this._soulBarFill);
-
-    this._soulLabel = new Text('SOUL', {
-      fontFamily: 'monospace',
-      fontSize: 10,
-      fill: 0xce93d8,
+    this._soulLabel = new Text('', {
+      fontFamily: PIXEL_FONT, fontSize: 7, fill: 0xce93d8,
     });
-    this._soulLabel.x = 10;
-    this._soulLabel.y = 147;
+    this._soulLabel.x = 100;
+    this._soulLabel.y = 149;
     this.container.addChild(this._soulLabel);
 
-    // Vertical separator between left and right panels
-    const sep = new Graphics();
-    sep.beginFill(0x2a3a55);
-    sep.drawRect(218, 4, 2, UI_HEIGHT - 8);
-    sep.endFill();
-    this.container.addChild(sep);
-
-    // ── Right panel: message log ────────────────
-    const msgBg = new Graphics();
-    msgBg.beginFill(0x060610);
-    msgBg.drawRect(222, 4, SCREEN_WIDTH - 226, UI_HEIGHT - 8);
-    msgBg.endFill();
-    this.container.addChild(msgBg);
-
+    // ── メッセージログ ────────────────────────────────────────
     this._msgTexts = [];
     for (let i = 0; i < MAX_MESSAGES; i++) {
       const t = new Text('', {
-        fontFamily: 'monospace',
-        fontSize: 12,
+        fontFamily: PIXEL_FONT,
+        fontSize: i === 0 ? 9 : 8,
         fill: COLOR.GRAY,
+        wordWrap: true,
+        wordWrapWidth: SCREEN_WIDTH - 240,
       });
       t.x = 230;
-      t.y = 8 + i * 26;
+      t.y = 14 + i * 26;
       this.container.addChild(t);
       this._msgTexts.push(t);
     }
 
-    // Controls hint
-    const hint = new Text('移動: 矢印キー / WASD / スワイプ  |  敵にぶつかって攻撃  |  Space = 魂の一撃  |  ＞ = 階段', {
-      fontFamily: 'monospace',
-      fontSize: 10,
-      fill: 0x445566,
+    // 操作ヒント
+    const hint = new Text('WASD/Arrow=Move  Space=Soul  >=Stairs', {
+      fontFamily: PIXEL_FONT,
+      fontSize: 6,
+      fill: 0x334455,
     });
     hint.x = 230;
-    hint.y = UI_HEIGHT - 16;
+    hint.y = UI_HEIGHT - 14;
     this.container.addChild(hint);
 
-    // Overlay for game over / win
+    // ── オーバーレイ（ゲームオーバー/クリア） ────────────────
     this._overlay = new Graphics();
     this._overlay.visible = false;
     this._overlay.eventMode = 'static';
@@ -173,10 +164,14 @@ export class UI {
     app.stage.addChild(this._overlay);
 
     this._overlayText = new Text('', {
-      fontFamily: 'monospace',
-      fontSize: 32,
+      fontFamily: PIXEL_FONT,
+      fontSize: 22,
       fill: COLOR.WHITE,
       align: 'center',
+      lineHeight: 36,
+      dropShadow: true,
+      dropShadowColor: 0x000000,
+      dropShadowDistance: 3,
     });
     this._overlayText.anchor.set(0.5);
     this._overlayText.x = SCREEN_WIDTH / 2;
@@ -185,48 +180,85 @@ export class UI {
     app.stage.addChild(this._overlayText);
   }
 
+  _drawBarLabel(label, color, x, y) {
+    const t = new Text(label, {
+      fontFamily: PIXEL_FONT,
+      fontSize: 7,
+      fill: color,
+    });
+    t.x = x;
+    t.y = y;
+    this.container.addChild(t);
+  }
+
+  _makeBarBg(x, y, w, h) {
+    const g = new Graphics();
+    // 外枠
+    g.beginFill(0x000000, 0.7);
+    g.drawRoundedRect(x - 1, y - 1, w + 2, h + 2, 3);
+    g.endFill();
+    // 内側背景
+    g.beginFill(0x0d1525);
+    g.drawRoundedRect(x, y, w, h, 2);
+    g.endFill();
+    this.container.addChild(g);
+    return g;
+  }
+
+  _drawGradientBar(gfx, x, y, w, h, pct, colorHigh, colorMid, colorLow) {
+    gfx.clear();
+    if (pct <= 0) return;
+    const col = pct > 0.5 ? colorHigh : pct > 0.25 ? colorMid : colorLow;
+    const fillW = Math.max(2, Math.floor(w * pct));
+    // メインバー
+    gfx.beginFill(col, 0.9);
+    gfx.drawRoundedRect(x, y, fillW, h, 2);
+    gfx.endFill();
+    // 上部ハイライト
+    gfx.beginFill(0xffffff, 0.2);
+    gfx.drawRoundedRect(x, y, fillW, Math.ceil(h * 0.4), 2);
+    gfx.endFill();
+  }
+
   update(player, floor) {
-    // Stats lines
-    this._statsLine1.text = `Lv.${player.level}   Floor ${floor} / ${MAX_FLOORS}`;
-    this._statsLine2.text = `ATK: ${player.attack}   DEF: ${player.defense}`;
+    this._statsLine1.text = `LV.${player.level}   FL.${floor}/${MAX_FLOORS}`;
+    this._statsLine2.text = `ATK:${player.attack}  DEF:${player.defense}`;
 
-    // HP bar
+    // HP バー
     const hpPct = Math.max(0, player.hp / player.maxHp);
-    const hpColor = hpPct > 0.5 ? COLOR.HP_GREEN : hpPct > 0.25 ? COLOR.HP_YELLOW : COLOR.HP_RED;
-    this._hpBarFill.clear();
-    this._hpBarFill.beginFill(hpColor);
-    this._hpBarFill.drawRect(10, 42, Math.floor(200 * hpPct), 14);
-    this._hpBarFill.endFill();
-    this._hpLabel.text = `HP  ${player.hp} / ${player.maxHp}`;
+    this._drawGradientBar(this._hpBarFill, 14, 54, 200, 12, hpPct,
+      COLOR.HP_GREEN, COLOR.HP_YELLOW, COLOR.HP_RED);
+    this._hpValueText.text = `${player.hp}/${player.maxHp}`;
 
-    // XP bar
+    // XP バー
     const xpPct = Math.min(1, player.xp / player.xpToNext);
-    this._xpBarFill.clear();
-    this._xpBarFill.beginFill(COLOR.XP_BAR);
-    this._xpBarFill.drawRect(10, 78, Math.floor(200 * xpPct), 10);
-    this._xpBarFill.endFill();
-    this._xpLabel.text = `XP  ${player.xp} / ${player.xpToNext}`;
+    this._drawGradientBar(this._xpBarFill, 14, 93, 200, 8, xpPct,
+      COLOR.XP_BAR, 0xb266ff, 0x7c4dff);
+    this._xpValueText.text = `${player.xp}/${player.xpToNext}`;
 
-    // Floor progress bar (gold color)
+    // DEPTH バー
     const floorPct = Math.min(1, floor / MAX_FLOORS);
     this._floorBarFill.clear();
-    this._floorBarFill.beginFill(COLOR.STAIRS);
-    this._floorBarFill.drawRect(10, 112, Math.floor(200 * floorPct), 8);
+    this._floorBarFill.beginFill(COLOR.STAIRS, 0.85);
+    this._floorBarFill.drawRoundedRect(14, 128, Math.max(2, Math.floor(200 * floorPct)), 6, 2);
     this._floorBarFill.endFill();
-    this._floorLabel.text = `DEPTH  ${floor} / ${MAX_FLOORS}`;
 
-    // Soul gauge (purple when charging, gold when ready)
+    // SOUL ゲージ
     const soulPct = Math.min(1, player.soul / player.maxSoul);
     const soulReady = player.soul >= player.maxSoul;
-    const soulColor = soulReady ? COLOR.YELLOW : COLOR.XP_BAR;
+    const soulColor = soulReady ? 0xffd700 : 0xce93d8;
     this._soulBarFill.clear();
-    this._soulBarFill.beginFill(soulColor);
-    this._soulBarFill.drawRect(10, 136, Math.floor(200 * soulPct), 8);
+    this._soulBarFill.beginFill(soulColor, soulReady ? 1.0 : 0.8);
+    this._soulBarFill.drawRoundedRect(14, 149, Math.max(2, Math.floor(200 * soulPct)), 6, 2);
     this._soulBarFill.endFill();
-    this._soulLabel.text = soulReady
-      ? `SOUL  ✨ READY! [Space]`
-      : `SOUL  ${player.soul} / ${player.maxSoul}`;
-    this._soulLabel.style.fill = soulReady ? COLOR.YELLOW : 0xce93d8;
+    if (soulReady) {
+      // 発光エフェクト
+      this._soulBarFill.beginFill(0xffffff, 0.3);
+      this._soulBarFill.drawRoundedRect(14, 149, 200, 3, 2);
+      this._soulBarFill.endFill();
+    }
+    this._soulLabel.text = soulReady ? 'READY!' : '';
+    this._soulLabel.style.fill = 0xffd700;
   }
 
   addMessage(text, color = COLOR.GRAY) {
@@ -243,7 +275,7 @@ export class UI {
       if (msg) {
         this._msgTexts[i].text = msg.text;
         this._msgTexts[i].style.fill = msg.color;
-        this._msgTexts[i].alpha = 1 - i * 0.15;
+        this._msgTexts[i].alpha = i === 0 ? 1 : 1 - i * 0.18;
       } else {
         this._msgTexts[i].text = '';
       }
@@ -252,12 +284,17 @@ export class UI {
 
   showMessage(text, color = COLOR.WHITE) {
     this._overlay.clear();
-    this._overlay.beginFill(0x000000, 0.7);
+    // 半透明黒背景
+    this._overlay.beginFill(0x000000, 0.78);
     this._overlay.drawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     this._overlay.endFill();
+    // 装飾枠
+    this._overlay.lineStyle(3, 0x4a5a8a, 0.9);
+    this._overlay.drawRoundedRect(SCREEN_WIDTH / 2 - 220, SCREEN_HEIGHT / 2 - 80, 440, 160, 8);
+    this._overlay.lineStyle(0);
     this._overlay.visible = true;
 
-    this._overlayText.text = text + '\n\nタップ / クリックでリスタート';
+    this._overlayText.text = text + '\n\nClick to Restart';
     this._overlayText.style.fill = color;
     this._overlayText.visible = true;
   }
