@@ -1,10 +1,10 @@
 export const TILE_SIZE = 40;
 export const MAP_COLS = 20;
-export const MAP_ROWS = 14;
+export const MAP_ROWS = 16;
 export const SCREEN_WIDTH = MAP_COLS * TILE_SIZE;   // 800
-export const MAP_HEIGHT_PX = MAP_ROWS * TILE_SIZE;  // 560
-export const UI_HEIGHT = 120;
-export const SCREEN_HEIGHT = MAP_HEIGHT_PX + UI_HEIGHT; // 680
+export const MAP_HEIGHT_PX = MAP_ROWS * TILE_SIZE;  // 640
+export const UI_HEIGHT = 160;
+export const SCREEN_HEIGHT = MAP_HEIGHT_PX + UI_HEIGHT; // 800
 
 export const TILE = {
   FLOOR: 0,
