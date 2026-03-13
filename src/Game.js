@@ -321,6 +321,15 @@ export class Game {
     this.effects.spawnHitEffect(enemy.gridX, enemy.gridY, enemy.def.color ?? 0x4fc3f7);
     this.effects.spawnDamageNumber(enemy.gridX, enemy.gridY, dmg, 0x4fc3f7);
 
+    // フェーズ2：ボスのHP50%以下で激怒モード突入
+    if (enemy.def.isBoss && !enemy.def.phase2 && enemy.hp <= Math.floor(enemy.maxHp / 2)) {
+      enemy.def.phase2 = true;
+      enemy.def.attack += 10;
+      this.ui.addMessage(`💢 ダークロードが激怒した！`, COLOR.RED);
+      this.ui.addMessage(`闇のオーラが膨れ上がる！`, COLOR.PURPLE);
+      this.effects.screenShake(12, 20);
+    }
+
     if (!enemy.alive) {
       const gainedXp = enemy.def.xp;
       const ex = enemy.gridX;
@@ -362,16 +371,36 @@ export class Game {
       const dist = Math.abs(dx) + Math.abs(dy);
 
       if (dist === 1) {
-        const dmg = Math.max(1, enemy.def.attack - this.player.defense);
+        let dmg;
+        let isSpecial = false;
+
+        if (enemy.def.isBoss) {
+          enemy.attackCount = (enemy.attackCount || 0) + 1;
+          const specialInterval = enemy.def.phase2 ? 2 : 3;
+          if (enemy.attackCount % specialInterval === 0) {
+            isSpecial = true;
+            // 呪いの一撃：防御の半分を無視し、1.5倍ダメージ
+            dmg = Math.max(2, Math.floor((enemy.def.attack - Math.floor(this.player.defense / 2)) * 1.5));
+          } else {
+            dmg = Math.max(1, enemy.def.attack - this.player.defense);
+          }
+        } else {
+          dmg = Math.max(1, enemy.def.attack - this.player.defense);
+        }
+
         this.player.hp -= dmg;
         this.player.flash();
         this.audio.playHit();
-        this.ui.addMessage(`${enemy.def.name}の攻撃！ ${dmg} ダメージ`, COLOR.RED);
-
-        // プレイヤーへのダメージエフェクト
         this.effects.spawnPlayerDamageNumber(this.player.gridX, this.player.gridY, dmg);
-        const shakeStrength = enemy.def.isBoss ? 8 : 4;
-        this.effects.screenShake(shakeStrength, 10);
+
+        if (isSpecial) {
+          this.ui.addMessage(`💀 ダークロードの呪いの一撃！ ${dmg} ダメージ！！`, COLOR.PURPLE);
+          this.effects.screenShake(15, 15);
+        } else {
+          this.ui.addMessage(`${enemy.def.name}の攻撃！ ${dmg} ダメージ`, COLOR.RED);
+          const shakeStrength = enemy.def.isBoss ? 8 : 4;
+          this.effects.screenShake(shakeStrength, 10);
+        }
       } else if (!enemy.def.isBoss && dist <= 8) {
         this._moveEnemyToward(enemy, dx, dy);
       } else if (!enemy.def.isBoss) {
