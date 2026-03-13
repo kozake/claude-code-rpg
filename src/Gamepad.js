@@ -1,5 +1,5 @@
 import { Container, Graphics, Text, Rectangle } from 'pixi.js';
-import { MAP_HEIGHT_PX } from './constants.js';
+import { MAP_HEIGHT_PX, SCREEN_WIDTH } from './constants.js';
 
 const BTN = 70;          // ボタンサイズ (px)
 const GAP = 6;           // ボタン間隔
@@ -21,8 +21,9 @@ export class Gamepad {
   /**
    * @param {import('pixi.js').Application} app
    * @param {(dx: number, dy: number) => void} onMove
+   * @param {() => void} onSpecial
    */
-  constructor(app, onMove) {
+  constructor(app, onMove, onSpecial) {
     this.container = new Container();
     this.container.visible = false;
     app.stage.addChild(this.container);
@@ -66,9 +67,19 @@ export class Gamepad {
         }
       );
     }
+
+    // 必殺技ボタン（右下）
+    if (onSpecial) {
+      const sx = SCREEN_WIDTH - MARGIN - BTN;
+      const sy = MAP_HEIGHT_PX - MARGIN - BTN;
+      this._makeButton(sx, sy, '✨', () => {
+        this.touched = true;
+        onSpecial();
+      }, true);
+    }
   }
 
-  _makeButton(x, y, label, onClick) {
+  _makeButton(x, y, label, onClick, isSpecial = false) {
     const btn = new Container();
     btn.x = x;
     btn.y = y;
@@ -77,9 +88,12 @@ export class Gamepad {
 
     const gfx = new Graphics();
 
+    const normalLine  = isSpecial ? 0x9c27b0 : COLOR_NORMAL_LINE;
+    const pressedLine = isSpecial ? 0xffd700 : COLOR_PRESS_LINE;
+
     const drawNormal = () => {
       gfx.clear();
-      gfx.lineStyle(2, COLOR_NORMAL_LINE, 1);
+      gfx.lineStyle(2, normalLine, 1);
       gfx.beginFill(COLOR_NORMAL_BG, 0.85);
       gfx.drawRoundedRect(0, 0, BTN, BTN, RADIUS);
       gfx.endFill();
@@ -87,7 +101,7 @@ export class Gamepad {
 
     const drawPressed = () => {
       gfx.clear();
-      gfx.lineStyle(2, COLOR_PRESS_LINE, 1);
+      gfx.lineStyle(2, pressedLine, 1);
       gfx.beginFill(COLOR_PRESS_BG, 0.95);
       gfx.drawRoundedRect(0, 0, BTN, BTN, RADIUS);
       gfx.endFill();

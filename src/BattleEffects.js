@@ -210,6 +210,41 @@ export class BattleEffects {
     this.damageNumbers.push(lvText);
   }
 
+  /** 魂の一撃エフェクト */
+  spawnSpecialAttackEffect(gridX, gridY) {
+    const cx = gridX * TILE_SIZE + TILE_SIZE / 2;
+    const cy = gridY * TILE_SIZE + TILE_SIZE / 2;
+    const cols = [0xffd700, 0xffffff, 0xce93d8, 0xffeb3b];
+    // 放射パーティクル（大きめ）
+    for (let i = 0; i < 30; i++) {
+      const angle = (i / 30) * Math.PI * 2;
+      const speed = 2 + Math.random() * 5;
+      this.particles.push(new Particle(
+        this.effectContainer,
+        cx + (Math.random() - 0.5) * 10,
+        cy + (Math.random() - 0.5) * 10,
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed,
+        cols[Math.floor(Math.random() * cols.length)],
+        2.5 + Math.random() * 3,
+        50 + Math.random() * 30,
+        0.08,
+      ));
+    }
+    // 中心フラッシュ×3
+    this._spawnFlash(cx, cy, 0xffd700, 32, 22);
+    this._spawnFlash(cx, cy, 0xffffff, 20, 16);
+    this._spawnFlash(cx, cy, 0xce93d8, 14, 12);
+
+    // "魂の一撃！" テキスト
+    const label = new DamageNumber(this.effectContainer, cx, cy - 30, '魂の一撃！', 0xffd700);
+    label.text.style.fontSize = 20;
+    label.life = 90;
+    label.maxLife = 90;
+    label.vy = -1.0;
+    this.damageNumbers.push(label);
+  }
+
   /** ボス撃破エフェクト */
   spawnBossDeathEffect(gridX, gridY) {
     const cx = gridX * TILE_SIZE + TILE_SIZE / 2;

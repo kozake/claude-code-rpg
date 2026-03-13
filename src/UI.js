@@ -108,6 +108,25 @@ export class UI {
     this._floorLabel.y = 123;
     this.container.addChild(this._floorLabel);
 
+    // Soul gauge BG
+    this._soulBarBg = new Graphics();
+    this._soulBarBg.beginFill(COLOR.HP_BG);
+    this._soulBarBg.drawRect(10, 136, 200, 8);
+    this._soulBarBg.endFill();
+    this.container.addChild(this._soulBarBg);
+
+    this._soulBarFill = new Graphics();
+    this.container.addChild(this._soulBarFill);
+
+    this._soulLabel = new Text('SOUL', {
+      fontFamily: 'monospace',
+      fontSize: 10,
+      fill: 0xce93d8,
+    });
+    this._soulLabel.x = 10;
+    this._soulLabel.y = 147;
+    this.container.addChild(this._soulLabel);
+
     // Vertical separator between left and right panels
     const sep = new Graphics();
     sep.beginFill(0x2a3a55);
@@ -136,7 +155,7 @@ export class UI {
     }
 
     // Controls hint
-    const hint = new Text('移動: 矢印キー / WASD / スワイプ  |  敵にぶつかって攻撃  |  ＞ = 階段', {
+    const hint = new Text('移動: 矢印キー / WASD / スワイプ  |  敵にぶつかって攻撃  |  Space = 魂の一撃  |  ＞ = 階段', {
       fontFamily: 'monospace',
       fontSize: 10,
       fill: 0x445566,
@@ -195,6 +214,19 @@ export class UI {
     this._floorBarFill.drawRect(10, 112, Math.floor(200 * floorPct), 8);
     this._floorBarFill.endFill();
     this._floorLabel.text = `DEPTH  ${floor} / ${MAX_FLOORS}`;
+
+    // Soul gauge (purple when charging, gold when ready)
+    const soulPct = Math.min(1, player.soul / player.maxSoul);
+    const soulReady = player.soul >= player.maxSoul;
+    const soulColor = soulReady ? COLOR.YELLOW : COLOR.XP_BAR;
+    this._soulBarFill.clear();
+    this._soulBarFill.beginFill(soulColor);
+    this._soulBarFill.drawRect(10, 136, Math.floor(200 * soulPct), 8);
+    this._soulBarFill.endFill();
+    this._soulLabel.text = soulReady
+      ? `SOUL  ✨ READY! [Space]`
+      : `SOUL  ${player.soul} / ${player.maxSoul}`;
+    this._soulLabel.style.fill = soulReady ? COLOR.YELLOW : 0xce93d8;
   }
 
   addMessage(text, color = COLOR.GRAY) {

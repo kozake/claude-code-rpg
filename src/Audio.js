@@ -248,6 +248,18 @@ export class AudioManager {
     this._osc(N.D5, 'sine', t + 0.22, 0.30, this.sfxGain, 0.16);
   }
 
+  playSpecialAttack() {
+    if (!this.ctx) return;
+    const t = this._t();
+    // 上昇スイープ＋和音で「必殺技発動」感を演出
+    this._sweep(N.D3, N.D5, 'sine',     t,        0.18, this.sfxGain, 0.50);
+    this._sweep(N.A3, N.A4, 'sine',     t + 0.04, 0.16, this.sfxGain, 0.35);
+    this._osc(N.D5,          'square',  t + 0.18, 0.28, this.sfxGain, 0.28);
+    this._osc(N.A4,          'square',  t + 0.18, 0.28, this.sfxGain, 0.18);
+    this._noise(t,           0.08,  this.sfxGain, 0.22, 6000, 'highpass');
+    this._noise(t + 0.18,    0.20,  this.sfxGain, 0.15, 3000, 'bandpass');
+  }
+
   playStairs() {
     if (!this.ctx) return;
     const t = this._t();
