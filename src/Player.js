@@ -14,6 +14,7 @@ export class Player {
     this.xpToNext = 20;
     this.soul = 0;
     this.maxSoul = 100;
+    this.inventory = []; // 回復アイテムのキー配列 e.g. ['potion', 'elixir']
 
     this.container = new Container();
     parent.addChild(this.container);

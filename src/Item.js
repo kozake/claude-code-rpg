@@ -2,10 +2,11 @@ import { Container, Graphics } from 'pixi.js';
 import { TILE_SIZE } from './constants.js';
 
 export class Item {
-  constructor(parent, gridX, gridY, def) {
+  constructor(parent, gridX, gridY, def, itemKey) {
     this.gridX = gridX;
     this.gridY = gridY;
     this.def = def;
+    this.itemKey = itemKey ?? null;
 
     this.container = new Container();
     parent.addChild(this.container);
