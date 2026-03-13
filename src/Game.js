@@ -25,6 +25,8 @@ export class Game {
     this.stairs = null;
     this.ui = new UI(app);
     this.audio = new AudioManager();
+    // ゲーム中に一度でも出現した武器/防具のキーを記録（重複出現防止）
+    this._seenWeapons = new Set();
 
     this._initLevel();
     this._bindKeys();
@@ -112,74 +114,67 @@ export class Game {
   }
 
   _placeItems(rooms) {
-    const itemPool = this._buildItemPool();
     // 1フロアにつき1〜2個のアイテムを配置（ボス階は回復重視で2個）
     const isBossFloor = this.floor >= MAX_FLOORS;
     const itemCount = isBossFloor ? 2 : 1 + (Math.random() < 0.4 ? 1 : 0);
+
+    // プールをキー配列で管理し、配置済み武器はその場で除外する
+    const pool = this._buildItemPool();
 
     let placed = 0;
     const usedTiles = new Set();
 
     // 試行：ランダムな部屋（スタート部屋以外）に配置
     for (let attempt = 0; attempt < 60 && placed < itemCount; attempt++) {
+      if (pool.length === 0) break;
+
       const roomIdx = 1 + Math.floor(Math.random() * Math.max(1, rooms.length - 1));
       const room = rooms[Math.min(roomIdx, rooms.length - 1)];
       const ix = room.x + 1 + Math.floor(Math.random() * Math.max(1, room.w - 2));
       const iy = room.y + 1 + Math.floor(Math.random() * Math.max(1, room.h - 2));
 
-      const key = `${ix},${iy}`;
-      if (usedTiles.has(key)) continue;
+      const tileKey = `${ix},${iy}`;
+      if (usedTiles.has(tileKey)) continue;
       if (this.map[iy][ix] !== TILE.FLOOR) continue;
       if (this.enemies.some(e => e.alive && e.gridX === ix && e.gridY === iy)) continue;
       if (this.stairs && this.stairs.x === ix && this.stairs.y === iy) continue;
 
-      const def = itemPool[Math.floor(Math.random() * itemPool.length)];
+      const poolIdx = Math.floor(Math.random() * pool.length);
+      const itemKey = pool[poolIdx];
+      const def = ITEM_DEFS[itemKey];
+
+      // 武器/防具（minFloor あり）はプールから取り除いて二度と出現させない
+      if (def.minFloor !== undefined) {
+        pool.splice(poolIdx, 1);
+        this._seenWeapons.add(itemKey);
+      }
+
       this.items.push(new Item(this.worldContainer, ix, iy, def));
-      usedTiles.add(key);
+      usedTiles.add(tileKey);
       placed++;
     }
   }
 
   _buildItemPool() {
-    // フロアに応じてアイテムプールを調整
+    // フロアに応じた消耗品 + まだ出現していない武器/防具をキー配列で返す
     const floor = this.floor;
     const isBossFloor = floor >= MAX_FLOORS;
 
-    if (isBossFloor) {
-      // ボス階前は回復・最強武器を優遇
-      return [
-        ITEM_DEFS.elixir,
-        ITEM_DEFS.elixir,
-        ITEM_DEFS.potion,
-        ITEM_DEFS.flameSword,
-        ITEM_DEFS.mithrilArmor,
-      ];
+    // 消耗品（何度でも出現可）
+    const pool = isBossFloor
+      ? ['elixir', 'elixir', 'potion']
+      : floor <= 2
+        ? ['potion', 'potion']
+        : ['potion', 'elixir'];
+
+    // minFloor が現在階以下で、まだ未出現の武器/防具を追加
+    for (const [key, def] of Object.entries(ITEM_DEFS)) {
+      if (def.minFloor !== undefined && def.minFloor <= floor && !this._seenWeapons.has(key)) {
+        pool.push(key);
+      }
     }
-    if (floor <= 2) {
-      return [
-        ITEM_DEFS.potion,
-        ITEM_DEFS.potion,
-        ITEM_DEFS.ironSword,
-        ITEM_DEFS.steelShield,
-      ];
-    }
-    if (floor <= 5) {
-      return [
-        ITEM_DEFS.potion,
-        ITEM_DEFS.elixir,
-        ITEM_DEFS.ironSword,
-        ITEM_DEFS.flameSword,
-        ITEM_DEFS.steelShield,
-      ];
-    }
-    // 6階以降：全アイテム
-    return [
-      ITEM_DEFS.potion,
-      ITEM_DEFS.elixir,
-      ITEM_DEFS.flameSword,
-      ITEM_DEFS.steelShield,
-      ITEM_DEFS.mithrilArmor,
-    ];
+
+    return pool;
   }
 
   _checkItemPickup(nx, ny) {
