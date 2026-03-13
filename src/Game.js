@@ -401,12 +401,9 @@ export class Game {
           const shakeStrength = enemy.def.isBoss ? 8 : 4;
           this.effects.screenShake(shakeStrength, 10);
         }
-      } else if (enemy.def.isBoss) {
-        // ボスは常にプレイヤーを追跡する
+      } else if (!enemy.def.isBoss && dist <= 8) {
         this._moveEnemyToward(enemy, dx, dy);
-      } else if (dist <= 8) {
-        this._moveEnemyToward(enemy, dx, dy);
-      } else {
+      } else if (!enemy.def.isBoss) {
         this._moveEnemyRandom(enemy);
       }
     }
