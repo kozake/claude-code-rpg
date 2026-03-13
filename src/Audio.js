@@ -238,6 +238,16 @@ export class AudioManager {
     });
   }
 
+  playItemPickup() {
+    if (!this.ctx) return;
+    const t = this._t();
+    // 明るいアルペジオ音（アイテム取得感）
+    [N.G4, N.B3 || N.A3, N.D5].forEach((freq, i) => {
+      this._osc(freq, 'sine', t + i * 0.08, 0.22, this.sfxGain, 0.28);
+    });
+    this._osc(N.D5, 'sine', t + 0.22, 0.30, this.sfxGain, 0.16);
+  }
+
   playStairs() {
     if (!this.ctx) return;
     const t = this._t();
