@@ -113,9 +113,9 @@ export class Game {
 
   _placeItems(rooms) {
     const itemPool = this._buildItemPool();
-    // 1フロアにつき2〜3個のアイテムを配置（ボス階は回復重視で3個）
+    // 1フロアにつき1〜2個のアイテムを配置（ボス階は回復重視で2個）
     const isBossFloor = this.floor >= MAX_FLOORS;
-    const itemCount = isBossFloor ? 3 : 2 + (Math.random() < 0.4 ? 1 : 0);
+    const itemCount = isBossFloor ? 2 : 1 + (Math.random() < 0.4 ? 1 : 0);
 
     let placed = 0;
     const usedTiles = new Set();
@@ -356,9 +356,9 @@ export class Game {
         this.player.flash();
         this.audio.playHit();
         this.ui.addMessage(`${enemy.def.name}の攻撃！ ${dmg} ダメージ`, COLOR.RED);
-      } else if (dist <= 8) {
+      } else if (!enemy.def.isBoss && dist <= 8) {
         this._moveEnemyToward(enemy, dx, dy);
-      } else {
+      } else if (!enemy.def.isBoss) {
         this._moveEnemyRandom(enemy);
       }
     }
