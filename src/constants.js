@@ -102,7 +102,10 @@ export const BOSS_DEF = {
 
 export const MAX_FLOORS = 10;
 
-/** アイテム定義 */
+/** アイテム定義
+ * minFloor が設定された武器・防具はゲーム中1回しか出現しない（重複なし）。
+ * minFloor = その武器が出現し始める最低階層。
+ */
 export const ITEM_DEFS = {
   potion: {
     name: 'ポーション',
@@ -122,6 +125,8 @@ export const ITEM_DEFS = {
     value: 0,
     desc: 'HP 全回復',
   },
+
+  // ── 攻撃武器（tier 1→3） ─────────────────────────────────
   ironSword: {
     name: '鉄の剣',
     icon: 'sword',
@@ -130,6 +135,7 @@ export const ITEM_DEFS = {
     effect: 'attack',
     value: 4,
     desc: 'ATK +4',
+    minFloor: 1,   // 1階〜
   },
   flameSword: {
     name: '炎の剣',
@@ -139,7 +145,20 @@ export const ITEM_DEFS = {
     effect: 'attack',
     value: 8,
     desc: 'ATK +8',
+    minFloor: 3,   // 3階〜
   },
+  dragonSword: {
+    name: '龍牙の剣',
+    icon: 'sword',
+    color: 0xea80fc,
+    colorDark: 0x6a0080,
+    effect: 'attack',
+    value: 15,
+    desc: 'ATK +15',
+    minFloor: 6,   // 6階〜
+  },
+
+  // ── 防御装備（tier 1→3） ─────────────────────────────────
   steelShield: {
     name: '鋼の盾',
     icon: 'shield',
@@ -148,6 +167,7 @@ export const ITEM_DEFS = {
     effect: 'defense',
     value: 3,
     desc: 'DEF +3',
+    minFloor: 1,   // 1階〜
   },
   mithrilArmor: {
     name: 'ミスリルの鎧',
@@ -158,5 +178,17 @@ export const ITEM_DEFS = {
     value: 5,
     hpValue: 15,
     desc: 'DEF +5 / MaxHP +15',
+    minFloor: 4,   // 4階〜
+  },
+  crystalArmor: {
+    name: 'クリスタルの鎧',
+    icon: 'shield',
+    color: 0x80deea,
+    colorDark: 0x00838f,
+    effect: 'defenseHp',
+    value: 8,
+    hpValue: 20,
+    desc: 'DEF +8 / MaxHP +20',
+    minFloor: 7,   // 7階〜
   },
 };
