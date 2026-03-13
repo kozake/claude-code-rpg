@@ -251,12 +251,6 @@ export class Dungeon {
     }
     g.endFill();
 
-    // 階段ハイライト
-    g.beginFill(0xffffff, 0.25);
-    const sw0 = TILE_SIZE - 8;
-    g.drawRect(px + 4, py + 4, sw0, 2);
-    g.endFill();
-
     this.container.addChild(g);
   }
 

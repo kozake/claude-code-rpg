@@ -6,7 +6,6 @@ import { Item } from './Item.js';
 import { UI } from './UI.js';
 import { AudioManager } from './Audio.js';
 import { BattleEffects } from './BattleEffects.js';
-import { FogOfWar } from './FogOfWar.js';
 import {
   MAP_COLS, MAP_ROWS, TILE, TILE_SIZE, ENEMY_DEFS, BOSS_DEF, MAX_FLOORS, COLOR, ITEM_DEFS
 } from './constants.js';
@@ -27,18 +26,14 @@ export class Game {
     this.stairs = null;
     this.ui = new UI(app);
     this.audio = new AudioManager();
-    this.fog = new FogOfWar(this.worldContainer);
     // ゲーム中に一度でも出現した武器/防具のキーを記録（重複出現防止）
     this._seenWeapons = new Set();
 
     this._initLevel();
     this._bindKeys();
 
-    // バトルエフェクト（_initLevel後・fog後に追加してエフェクトが最前面に来るようにする）
+    // バトルエフェクト（_initLevel後に追加してエフェクトが最前面に来るようにする）
     this.effects = new BattleEffects(this.worldContainer, app);
-
-    // 初期 fog 更新
-    if (this.player) this.fog.update(this.player.gridX, this.player.gridY);
 
     // 浮遊アニメーション＆カメラ
     this._animTime = 0;
@@ -99,7 +94,6 @@ export class Game {
     this.enemies = [];
     this.items.forEach(item => item.destroy());
     this.items = [];
-    this.fog.reset();
 
     const { map, rooms } = this.dungeon.generate();
     this.map = map;
@@ -153,9 +147,6 @@ export class Game {
     }
 
     this._placeItems(rooms);
-
-    // fog 初期化（プレイヤー開始位置を可視化）
-    if (this.player) this.fog.update(this.player.gridX, this.player.gridY);
   }
 
   _placeItems(rooms) {
@@ -334,7 +325,6 @@ export class Game {
       this._playerAttack(enemy);
     } else {
       this.player.move(nx, ny);
-      this.fog.update(nx, ny);
 
       if (this.map[ny][nx] === TILE.STAIRS) {
         this.audio.playStairs();
