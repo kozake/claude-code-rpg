@@ -66,8 +66,38 @@ export const ENEMY_DEFS = {
     defense: 2,
     xp: 15,
   },
+  orc: {
+    name: 'オーク',
+    color: 0x8bc34a,
+    colorDark: 0x558b2f,
+    maxHp: 30,
+    attack: 9,
+    defense: 3,
+    xp: 22,
+  },
+  darkKnight: {
+    name: 'ダークナイト',
+    color: 0xab47bc,
+    colorDark: 0x6a1b9a,
+    maxHp: 45,
+    attack: 14,
+    defense: 5,
+    xp: 38,
+  },
 };
 
 export const ENEMY_KEYS = Object.keys(ENEMY_DEFS);
 
-export const MAX_FLOORS = 5;
+/** ボス専用定義（ランダムスポーンには含まない） */
+export const BOSS_DEF = {
+  name: 'ダークロード',
+  color: 0xef5350,
+  colorDark: 0x7f0000,
+  maxHp: 200,
+  attack: 24,
+  defense: 8,
+  xp: 500,
+  isBoss: true,
+};
+
+export const MAX_FLOORS = 10;

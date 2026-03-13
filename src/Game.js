@@ -5,7 +5,7 @@ import { Enemy } from './Enemy.js';
 import { UI } from './UI.js';
 import { AudioManager } from './Audio.js';
 import {
-  MAP_COLS, MAP_ROWS, TILE, TILE_SIZE, ENEMY_DEFS, MAX_FLOORS, COLOR
+  MAP_COLS, MAP_ROWS, TILE, TILE_SIZE, ENEMY_DEFS, BOSS_DEF, MAX_FLOORS, COLOR
 } from './constants.js';
 
 export class Game {
@@ -67,10 +67,14 @@ export class Game {
       this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.floor(this.player.maxHp * 0.3));
     }
 
-    const enemyCountBase = 1 + Math.floor(this.floor / 2);
-    for (let i = 1; i < rooms.length; i++) {
+    const isBossFloor = this.floor >= MAX_FLOORS;
+    // ボス階は最終部屋をボス用に空けておく
+    const spawnRooms = isBossFloor ? rooms.length - 1 : rooms.length;
+    const enemyCountBase = 2 + Math.floor(this.floor / 2);
+
+    for (let i = 1; i < spawnRooms; i++) {
       const room = rooms[i];
-      const count = enemyCountBase + Math.floor(Math.random() * 2);
+      const count = enemyCountBase + Math.floor(Math.random() * 3);
       for (let j = 0; j < count; j++) {
         const defKey = this._pickEnemyType();
         const scaledDef = this._scaleEnemy(ENEMY_DEFS[defKey]);
@@ -81,28 +85,39 @@ export class Game {
       }
     }
 
-    const lastRoom = rooms[rooms.length - 1];
-    const sx = Math.floor(lastRoom.x + lastRoom.w / 2);
-    const sy = Math.floor(lastRoom.y + lastRoom.h / 2);
-    this.stairs = { x: sx, y: sy };
-    this.map[sy][sx] = TILE.STAIRS;
-    this.dungeon.drawStairs(sx, sy);
-
-    this.ui.update(this.player, this.floor);
-    this.ui.addMessage(`${this.floor}階へようこそ！`, COLOR.YELLOW);
+    if (isBossFloor) {
+      // ボスを最終部屋の中央に配置
+      const bossRoom = rooms[rooms.length - 1];
+      const bx = Math.floor(bossRoom.x + bossRoom.w / 2);
+      const by = Math.floor(bossRoom.y + bossRoom.h / 2);
+      this.enemies.push(new Enemy(this.worldContainer, bx, by, { ...BOSS_DEF }));
+      this.ui.update(this.player, this.floor);
+      this.ui.addMessage(`⚠ 最終階！ダークロードが待ち構えている！`, COLOR.RED);
+    } else {
+      const lastRoom = rooms[rooms.length - 1];
+      const sx = Math.floor(lastRoom.x + lastRoom.w / 2);
+      const sy = Math.floor(lastRoom.y + lastRoom.h / 2);
+      this.stairs = { x: sx, y: sy };
+      this.map[sy][sx] = TILE.STAIRS;
+      this.dungeon.drawStairs(sx, sy);
+      this.ui.update(this.player, this.floor);
+      this.ui.addMessage(`${this.floor}階へようこそ！`, COLOR.YELLOW);
+    }
   }
 
   _pickEnemyType() {
-    if (this.floor <= 2) return Math.random() < 0.7 ? 'slime' : 'goblin';
-    if (this.floor <= 4) {
-      const r = Math.random();
-      return r < 0.3 ? 'slime' : r < 0.7 ? 'goblin' : 'skeleton';
-    }
-    return Math.random() < 0.4 ? 'goblin' : 'skeleton';
+    const r = Math.random();
+    if (this.floor <= 2) return r < 0.65 ? 'slime' : 'goblin';
+    if (this.floor <= 4) return r < 0.25 ? 'slime' : r < 0.6 ? 'goblin' : r < 0.85 ? 'skeleton' : 'orc';
+    if (this.floor <= 6) return r < 0.15 ? 'goblin' : r < 0.45 ? 'skeleton' : r < 0.8 ? 'orc' : 'darkKnight';
+    if (this.floor <= 8) return r < 0.2 ? 'skeleton' : r < 0.55 ? 'orc' : 'darkKnight';
+    // floor 9（ボス前）: ダークナイト中心
+    return r < 0.3 ? 'orc' : 'darkKnight';
   }
 
   _scaleEnemy(def) {
-    const scale = 1 + (this.floor - 1) * 0.2;
+    // 10階構成なので係数を0.12に抑えてバランス調整
+    const scale = 1 + (this.floor - 1) * 0.12;
     return {
       ...def,
       maxHp:  Math.floor(def.maxHp  * scale),
@@ -156,13 +171,6 @@ export class Game {
 
       if (this.map[ny][nx] === TILE.STAIRS) {
         this.audio.playStairs();
-        if (this.floor >= MAX_FLOORS) {
-          this.state = 'win';
-          this.audio.stopBGM();
-          this.audio.playWin();
-          this.ui.showMessage('ゲームクリア！\nおめでとう！', COLOR.GREEN);
-          return;
-        }
         this.floor++;
         this._initLevel();
         return;
@@ -192,6 +200,15 @@ export class Game {
       this.player.xp += gainedXp;
       this.audio.playEnemyDie();
       this.ui.addMessage(`${enemy.def.name}を倒した！ XP +${gainedXp}`, COLOR.YELLOW);
+
+      // ボス撃破 → ゲームクリア
+      if (enemy.def.isBoss) {
+        this.state = 'win';
+        this.audio.stopBGM();
+        this.audio.playWin();
+        this.ui.showMessage('ダークロードを倒した！\nゲームクリア！', COLOR.GREEN);
+        return;
+      }
 
       if (this.player.xp >= this.player.xpToNext) {
         this.player.levelUp();
