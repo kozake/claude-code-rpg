@@ -264,6 +264,10 @@ export class Game {
         case 'ArrowDown':  case 's': case 'S': dy =  1; break;
         case 'ArrowLeft':  case 'a': case 'A': dx = -1; break;
         case 'ArrowRight': case 'd': case 'D': dx =  1; break;
+        case ' ':
+          e.preventDefault();
+          this._trySpecialAttack();
+          return;
         default: return;
       }
       e.preventDefault();
@@ -389,6 +393,11 @@ export class Game {
         }
 
         this.player.hp -= dmg;
+        const wasReady = this.player.soul >= this.player.maxSoul;
+        this.player.soul = Math.min(this.player.maxSoul, this.player.soul + dmg);
+        if (!wasReady && this.player.soul >= this.player.maxSoul) {
+          this.ui.addMessage('✨ 魂の一撃 ready！ [Space]で発動！', COLOR.YELLOW);
+        }
         this.player.flash();
         this.audio.playHit();
         this.effects.spawnPlayerDamageNumber(this.player.gridX, this.player.gridY, dmg);
@@ -435,5 +444,87 @@ export class Game {
     if (this.enemies.some(e => e !== enemy && e.alive && e.gridX === nx && e.gridY === ny)) return false;
     enemy.move(nx, ny);
     return true;
+  }
+
+  _trySpecialAttack() {
+    this.audio.start();
+    this.audio.resume();
+
+    if (this.state !== 'playing') return;
+
+    if (this.player.soul < this.player.maxSoul) {
+      this.ui.addMessage(`魂ゲージが足りない！ (${this.player.soul}/${this.player.maxSoul})`, COLOR.GRAY);
+      return;
+    }
+
+    const adjacent = this.enemies.find(e =>
+      e.alive &&
+      Math.abs(e.gridX - this.player.gridX) + Math.abs(e.gridY - this.player.gridY) === 1
+    );
+
+    if (!adjacent) {
+      this.ui.addMessage('隣に敵がいない！', COLOR.GRAY);
+      return;
+    }
+
+    this._playerSpecialAttack(adjacent);
+    this._enemyTurns();
+    this.ui.update(this.player, this.floor);
+
+    if (this.player.hp <= 0) {
+      this.state = 'gameover';
+      this.audio.stopBGM();
+      this.audio.playGameOver();
+      this.ui.showMessage('ゲームオーバー\n勇者は力尽きた…', COLOR.RED);
+    }
+  }
+
+  _playerSpecialAttack(enemy) {
+    const dmg = Math.max(1, this.player.attack * 3);
+    this.player.soul = 0;
+
+    enemy.takeDamage(dmg);
+    this.audio.playSpecialAttack();
+    this.ui.addMessage(`✨ 魂の一撃！ ${enemy.def.name}に ${dmg} ダメージ！！`, COLOR.YELLOW);
+    this.effects.spawnSpecialAttackEffect(enemy.gridX, enemy.gridY);
+    this.effects.spawnDamageNumber(enemy.gridX, enemy.gridY, dmg, 0xffd700);
+    this.effects.screenShake(10, 15);
+
+    if (enemy.def.isBoss && !enemy.def.phase2 && enemy.hp <= Math.floor(enemy.maxHp / 2)) {
+      enemy.def.phase2 = true;
+      enemy.def.attack += 10;
+      this.ui.addMessage(`💢 ダークロードが激怒した！`, COLOR.RED);
+      this.ui.addMessage(`闇のオーラが膨れ上がる！`, COLOR.PURPLE);
+      this.effects.screenShake(12, 20);
+    }
+
+    if (!enemy.alive) {
+      const gainedXp = enemy.def.xp;
+      const ex = enemy.gridX;
+      const ey = enemy.gridY;
+      this.enemies = this.enemies.filter(e => e !== enemy);
+      this.player.xp += gainedXp;
+      this.audio.playEnemyDie();
+      this.ui.addMessage(`${enemy.def.name}を倒した！ XP +${gainedXp}`, COLOR.YELLOW);
+
+      if (enemy.def.isBoss) {
+        this.effects.spawnBossDeathEffect(ex, ey);
+        this.effects.screenShake(10, 25);
+        this.state = 'win';
+        this.audio.stopBGM();
+        this.audio.playWin();
+        this.ui.showMessage('ダークロードを倒した！\nゲームクリア！', COLOR.GREEN);
+        return;
+      }
+
+      this.effects.spawnDeathEffect(ex, ey, enemy.def.color ?? 0xff8800);
+
+      if (this.player.xp >= this.player.xpToNext) {
+        this.player.levelUp();
+        this.audio.playLevelUp();
+        this.ui.addMessage(`レベルアップ！ Lv.${this.player.level}`, COLOR.PURPLE);
+        this.effects.spawnLevelUpEffect(this.player.gridX, this.player.gridY);
+      }
+    }
   }
 }

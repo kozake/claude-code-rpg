@@ -12,6 +12,8 @@ export class Player {
     this.level = 1;
     this.xp = 0;
     this.xpToNext = 20;
+    this.soul = 0;
+    this.maxSoul = 100;
 
     this.container = new Container();
     parent.addChild(this.container);
@@ -263,6 +265,7 @@ export class Player {
     this.defense += 1;
   }
 
-  get hpPercent() { return this.hp / this.maxHp; }
-  get xpPercent()  { return this.xp / this.xpToNext; }
+  get hpPercent()   { return this.hp / this.maxHp; }
+  get xpPercent()   { return this.xp / this.xpToNext; }
+  get soulPercent() { return this.soul / this.maxSoul; }
 }
