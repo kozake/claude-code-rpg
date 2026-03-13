@@ -101,3 +101,62 @@ export const BOSS_DEF = {
 };
 
 export const MAX_FLOORS = 10;
+
+/** アイテム定義 */
+export const ITEM_DEFS = {
+  potion: {
+    name: 'ポーション',
+    icon: 'potion',
+    color: 0x69f0ae,
+    colorDark: 0x00c853,
+    effect: 'heal',
+    value: 20,
+    desc: 'HP +20 回復',
+  },
+  elixir: {
+    name: 'エリクサー',
+    icon: 'potion',
+    color: 0x40c4ff,
+    colorDark: 0x0091ea,
+    effect: 'healFull',
+    value: 0,
+    desc: 'HP 全回復',
+  },
+  ironSword: {
+    name: '鉄の剣',
+    icon: 'sword',
+    color: 0xffb74d,
+    colorDark: 0xe65100,
+    effect: 'attack',
+    value: 4,
+    desc: 'ATK +4',
+  },
+  flameSword: {
+    name: '炎の剣',
+    icon: 'sword',
+    color: 0xff5722,
+    colorDark: 0xb71c1c,
+    effect: 'attack',
+    value: 8,
+    desc: 'ATK +8',
+  },
+  steelShield: {
+    name: '鋼の盾',
+    icon: 'shield',
+    color: 0xb0bec5,
+    colorDark: 0x546e7a,
+    effect: 'defense',
+    value: 3,
+    desc: 'DEF +3',
+  },
+  mithrilArmor: {
+    name: 'ミスリルの鎧',
+    icon: 'shield',
+    color: 0x64b5f6,
+    colorDark: 0x1565c0,
+    effect: 'defenseHp',
+    value: 5,
+    hpValue: 15,
+    desc: 'DEF +5 / MaxHP +15',
+  },
+};

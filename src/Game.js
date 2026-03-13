@@ -2,10 +2,11 @@ import { Container } from 'pixi.js';
 import { Dungeon } from './Dungeon.js';
 import { Player } from './Player.js';
 import { Enemy } from './Enemy.js';
+import { Item } from './Item.js';
 import { UI } from './UI.js';
 import { AudioManager } from './Audio.js';
 import {
-  MAP_COLS, MAP_ROWS, TILE, TILE_SIZE, ENEMY_DEFS, BOSS_DEF, MAX_FLOORS, COLOR
+  MAP_COLS, MAP_ROWS, TILE, TILE_SIZE, ENEMY_DEFS, BOSS_DEF, MAX_FLOORS, COLOR, ITEM_DEFS
 } from './constants.js';
 
 export class Game {
@@ -20,6 +21,7 @@ export class Game {
     this.dungeon = new Dungeon(this.worldContainer);
     this.player = null;
     this.enemies = [];
+    this.items = [];
     this.stairs = null;
     this.ui = new UI(app);
     this.audio = new AudioManager();
@@ -52,6 +54,8 @@ export class Game {
     this.dungeon.clear();
     this.enemies.forEach(e => { if (e.alive) e.destroy(); });
     this.enemies = [];
+    this.items.forEach(item => item.destroy());
+    this.items = [];
 
     const { map, rooms } = this.dungeon.generate();
     this.map = map;
@@ -103,6 +107,124 @@ export class Game {
       this.ui.update(this.player, this.floor);
       this.ui.addMessage(`${this.floor}階へようこそ！`, COLOR.YELLOW);
     }
+
+    this._placeItems(rooms);
+  }
+
+  _placeItems(rooms) {
+    const itemPool = this._buildItemPool();
+    // 1フロアにつき2〜3個のアイテムを配置（ボス階は回復重視で3個）
+    const isBossFloor = this.floor >= MAX_FLOORS;
+    const itemCount = isBossFloor ? 3 : 2 + (Math.random() < 0.4 ? 1 : 0);
+
+    let placed = 0;
+    const usedTiles = new Set();
+
+    // 試行：ランダムな部屋（スタート部屋以外）に配置
+    for (let attempt = 0; attempt < 60 && placed < itemCount; attempt++) {
+      const roomIdx = 1 + Math.floor(Math.random() * Math.max(1, rooms.length - 1));
+      const room = rooms[Math.min(roomIdx, rooms.length - 1)];
+      const ix = room.x + 1 + Math.floor(Math.random() * Math.max(1, room.w - 2));
+      const iy = room.y + 1 + Math.floor(Math.random() * Math.max(1, room.h - 2));
+
+      const key = `${ix},${iy}`;
+      if (usedTiles.has(key)) continue;
+      if (this.map[iy][ix] !== TILE.FLOOR) continue;
+      if (this.enemies.some(e => e.alive && e.gridX === ix && e.gridY === iy)) continue;
+      if (this.stairs && this.stairs.x === ix && this.stairs.y === iy) continue;
+
+      const def = itemPool[Math.floor(Math.random() * itemPool.length)];
+      this.items.push(new Item(this.worldContainer, ix, iy, def));
+      usedTiles.add(key);
+      placed++;
+    }
+  }
+
+  _buildItemPool() {
+    // フロアに応じてアイテムプールを調整
+    const floor = this.floor;
+    const isBossFloor = floor >= MAX_FLOORS;
+
+    if (isBossFloor) {
+      // ボス階前は回復・最強武器を優遇
+      return [
+        ITEM_DEFS.elixir,
+        ITEM_DEFS.elixir,
+        ITEM_DEFS.potion,
+        ITEM_DEFS.flameSword,
+        ITEM_DEFS.mithrilArmor,
+      ];
+    }
+    if (floor <= 2) {
+      return [
+        ITEM_DEFS.potion,
+        ITEM_DEFS.potion,
+        ITEM_DEFS.ironSword,
+        ITEM_DEFS.steelShield,
+      ];
+    }
+    if (floor <= 5) {
+      return [
+        ITEM_DEFS.potion,
+        ITEM_DEFS.elixir,
+        ITEM_DEFS.ironSword,
+        ITEM_DEFS.flameSword,
+        ITEM_DEFS.steelShield,
+      ];
+    }
+    // 6階以降：全アイテム
+    return [
+      ITEM_DEFS.potion,
+      ITEM_DEFS.elixir,
+      ITEM_DEFS.flameSword,
+      ITEM_DEFS.steelShield,
+      ITEM_DEFS.mithrilArmor,
+    ];
+  }
+
+  _checkItemPickup(nx, ny) {
+    const idx = this.items.findIndex(item => item.gridX === nx && item.gridY === ny);
+    if (idx === -1) return;
+
+    const item = this.items[idx];
+    const def = item.def;
+    this.items.splice(idx, 1);
+    item.destroy();
+    this.audio.playItemPickup();
+
+    switch (def.effect) {
+      case 'heal': {
+        const before = this.player.hp;
+        this.player.hp = Math.min(this.player.maxHp, this.player.hp + def.value);
+        const gained = this.player.hp - before;
+        this.ui.addMessage(`${def.name}を入手！ HP +${gained}`, COLOR.GREEN);
+        break;
+      }
+      case 'healFull': {
+        this.player.hp = this.player.maxHp;
+        this.ui.addMessage(`${def.name}を入手！ HP 全回復！`, COLOR.GREEN);
+        break;
+      }
+      case 'attack': {
+        this.player.attack += def.value;
+        this.ui.addMessage(`${def.name}を装備！ ATK +${def.value}`, COLOR.ORANGE);
+        break;
+      }
+      case 'defense': {
+        this.player.defense += def.value;
+        this.ui.addMessage(`${def.name}を装備！ DEF +${def.value}`, COLOR.CYAN);
+        break;
+      }
+      case 'defenseHp': {
+        this.player.defense += def.value;
+        this.player.maxHp  += def.hpValue;
+        this.player.hp     += def.hpValue;
+        this.ui.addMessage(`${def.name}を装備！ DEF +${def.value} / MaxHP +${def.hpValue}`, COLOR.CYAN);
+        break;
+      }
+    }
+
+    this.ui.update(this.player, this.floor);
   }
 
   _pickEnemyType() {
@@ -175,6 +297,8 @@ export class Game {
         this._initLevel();
         return;
       }
+
+      this._checkItemPickup(nx, ny);
     }
 
     this._enemyTurns();
