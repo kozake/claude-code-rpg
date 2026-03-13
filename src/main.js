@@ -56,7 +56,10 @@ app.view.addEventListener('touchend', (e) => {
   const dx = e.changedTouches[0].clientX - swipeStartX;
   const dy = e.changedTouches[0].clientY - swipeStartY;
 
-  if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return;
+  if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
+    game.handleTap();
+    return;
+  }
 
   if (Math.abs(dx) > Math.abs(dy)) {
     game.move(dx > 0 ? 1 : -1, 0);
