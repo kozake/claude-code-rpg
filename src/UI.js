@@ -1,10 +1,10 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import {
   SCREEN_WIDTH, MAP_HEIGHT_PX, UI_HEIGHT, SCREEN_HEIGHT,
-  COLOR
+  COLOR, MAX_FLOORS
 } from './constants.js';
 
-const MAX_MESSAGES = 4;
+const MAX_MESSAGES = 5;
 
 export class UI {
   constructor(app) {
@@ -30,49 +30,95 @@ export class UI {
 
     this.container.addChild(bg);
 
-    // Left panel: HP / XP bars
-    this._statsText = new Text('', {
+    // ── Left panel ─────────────────────────────
+    // Stats text line 1: Lv / Floor
+    this._statsLine1 = new Text('', {
       fontFamily: 'monospace',
       fontSize: 13,
       fill: COLOR.WHITE,
     });
-    this._statsText.x = 10;
-    this._statsText.y = 6;
-    this.container.addChild(this._statsText);
+    this._statsLine1.x = 10;
+    this._statsLine1.y = 6;
+    this.container.addChild(this._statsLine1);
+
+    // Stats text line 2: ATK / DEF
+    this._statsLine2 = new Text('', {
+      fontFamily: 'monospace',
+      fontSize: 13,
+      fill: COLOR.CYAN,
+    });
+    this._statsLine2.x = 10;
+    this._statsLine2.y = 22;
+    this.container.addChild(this._statsLine2);
 
     // HP bar BG
     this._hpBarBg = new Graphics();
     this._hpBarBg.beginFill(COLOR.HP_BG);
-    this._hpBarBg.drawRect(10, 28, 200, 12);
+    this._hpBarBg.drawRect(10, 42, 200, 14);
     this._hpBarBg.endFill();
     this.container.addChild(this._hpBarBg);
 
     this._hpBarFill = new Graphics();
     this.container.addChild(this._hpBarFill);
 
+    this._hpLabel = new Text('HP', {
+      fontFamily: 'monospace',
+      fontSize: 10,
+      fill: COLOR.GRAY,
+    });
+    this._hpLabel.x = 10;
+    this._hpLabel.y = 59;
+    this.container.addChild(this._hpLabel);
+
     // XP bar BG
     this._xpBarBg = new Graphics();
     this._xpBarBg.beginFill(COLOR.HP_BG);
-    this._xpBarBg.drawRect(10, 46, 200, 8);
+    this._xpBarBg.drawRect(10, 78, 200, 10);
     this._xpBarBg.endFill();
     this.container.addChild(this._xpBarBg);
 
     this._xpBarFill = new Graphics();
     this.container.addChild(this._xpBarFill);
 
-    this._barLabels = new Text('HP          XP', {
+    this._xpLabel = new Text('XP', {
       fontFamily: 'monospace',
       fontSize: 10,
       fill: COLOR.GRAY,
     });
-    this._barLabels.x = 10;
-    this._barLabels.y = 57;
-    this.container.addChild(this._barLabels);
+    this._xpLabel.x = 10;
+    this._xpLabel.y = 91;
+    this.container.addChild(this._xpLabel);
 
-    // Right panel: message log
+    // Floor progress bar BG
+    this._floorBarBg = new Graphics();
+    this._floorBarBg.beginFill(COLOR.HP_BG);
+    this._floorBarBg.drawRect(10, 112, 200, 8);
+    this._floorBarBg.endFill();
+    this.container.addChild(this._floorBarBg);
+
+    this._floorBarFill = new Graphics();
+    this.container.addChild(this._floorBarFill);
+
+    this._floorLabel = new Text('', {
+      fontFamily: 'monospace',
+      fontSize: 10,
+      fill: 0x7a8fa8,
+    });
+    this._floorLabel.x = 10;
+    this._floorLabel.y = 123;
+    this.container.addChild(this._floorLabel);
+
+    // Vertical separator between left and right panels
+    const sep = new Graphics();
+    sep.beginFill(0x2a3a55);
+    sep.drawRect(218, 4, 2, UI_HEIGHT - 8);
+    sep.endFill();
+    this.container.addChild(sep);
+
+    // ── Right panel: message log ────────────────
     const msgBg = new Graphics();
     msgBg.beginFill(0x060610);
-    msgBg.drawRect(220, 4, SCREEN_WIDTH - 224, UI_HEIGHT - 8);
+    msgBg.drawRect(222, 4, SCREEN_WIDTH - 226, UI_HEIGHT - 8);
     msgBg.endFill();
     this.container.addChild(msgBg);
 
@@ -83,7 +129,7 @@ export class UI {
         fontSize: 12,
         fill: COLOR.GRAY,
       });
-      t.x = 228;
+      t.x = 230;
       t.y = 8 + i * 26;
       this.container.addChild(t);
       this._msgTexts.push(t);
@@ -95,11 +141,11 @@ export class UI {
       fontSize: 10,
       fill: 0x445566,
     });
-    hint.x = 228;
+    hint.x = 230;
     hint.y = UI_HEIGHT - 16;
     this.container.addChild(hint);
 
-    // Overlay for game over / win (タップ/クリックでリスタート)
+    // Overlay for game over / win
     this._overlay = new Graphics();
     this._overlay.visible = false;
     this._overlay.eventMode = 'static';
@@ -121,27 +167,34 @@ export class UI {
   }
 
   update(player, floor) {
-    // Stats text
-    this._statsText.text =
-      `Lv.${player.level}   Floor ${floor}   ATK:${player.attack}  DEF:${player.defense}`;
+    // Stats lines
+    this._statsLine1.text = `Lv.${player.level}   Floor ${floor} / ${MAX_FLOORS}`;
+    this._statsLine2.text = `ATK: ${player.attack}   DEF: ${player.defense}`;
 
     // HP bar
     const hpPct = Math.max(0, player.hp / player.maxHp);
     const hpColor = hpPct > 0.5 ? COLOR.HP_GREEN : hpPct > 0.25 ? COLOR.HP_YELLOW : COLOR.HP_RED;
     this._hpBarFill.clear();
     this._hpBarFill.beginFill(hpColor);
-    this._hpBarFill.drawRect(10, 28, Math.floor(200 * hpPct), 12);
+    this._hpBarFill.drawRect(10, 42, Math.floor(200 * hpPct), 14);
     this._hpBarFill.endFill();
+    this._hpLabel.text = `HP  ${player.hp} / ${player.maxHp}`;
 
     // XP bar
     const xpPct = Math.min(1, player.xp / player.xpToNext);
     this._xpBarFill.clear();
     this._xpBarFill.beginFill(COLOR.XP_BAR);
-    this._xpBarFill.drawRect(10, 46, Math.floor(200 * xpPct), 8);
+    this._xpBarFill.drawRect(10, 78, Math.floor(200 * xpPct), 10);
     this._xpBarFill.endFill();
+    this._xpLabel.text = `XP  ${player.xp} / ${player.xpToNext}`;
 
-    this._barLabels.text =
-      `HP ${player.hp}/${player.maxHp}    XP ${player.xp}/${player.xpToNext}`;
+    // Floor progress bar (gold color)
+    const floorPct = Math.min(1, floor / MAX_FLOORS);
+    this._floorBarFill.clear();
+    this._floorBarFill.beginFill(COLOR.STAIRS);
+    this._floorBarFill.drawRect(10, 112, Math.floor(200 * floorPct), 8);
+    this._floorBarFill.endFill();
+    this._floorLabel.text = `DEPTH  ${floor} / ${MAX_FLOORS}`;
   }
 
   addMessage(text, color = COLOR.GRAY) {
@@ -158,7 +211,7 @@ export class UI {
       if (msg) {
         this._msgTexts[i].text = msg.text;
         this._msgTexts[i].style.fill = msg.color;
-        this._msgTexts[i].alpha = 1 - i * 0.2;
+        this._msgTexts[i].alpha = 1 - i * 0.15;
       } else {
         this._msgTexts[i].text = '';
       }
