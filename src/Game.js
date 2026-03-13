@@ -67,6 +67,7 @@ export class Game {
     this.state = 'playing';
     this.floor = 1;
     this._seenWeapons = new Set();
+    this.gamepad?.show(); // ゲームパッドをゲームプレイ中のみ表示
     this._initLevel();
   }
 
@@ -621,6 +622,7 @@ export class Game {
 
   /** ボス撃破後、少し間を置いてからエンディングシーンを開始 */
   _startEnding() {
+    this.gamepad?.hide(); // エンディング中はゲームパッドを非表示
     let waitFrames = 100; // 約1.7秒
     const tick = (delta) => {
       waitFrames -= delta;

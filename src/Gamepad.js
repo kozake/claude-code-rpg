@@ -32,12 +32,10 @@ export class Gamepad {
     app.stage.addChild(this.container);
 
     // タッチデバイス以外では非表示のまま
-    const isTouch =
+    this._isTouch =
       navigator.maxTouchPoints > 0 ||
       window.matchMedia('(pointer: coarse)').matches;
-    if (!isTouch) return;
-
-    this.container.visible = true;
+    if (!this._isTouch) return;
 
     // D-pad の左上座標
     // 十字全体: 幅 = STEP*2 + BTN = 222, 高さ = 222
@@ -252,6 +250,16 @@ export class Gamepad {
     g.beginFill(c, 0.65);
     g.drawCircle(cx + 4 * s, cy - 2 * s, 1.5);
     g.endFill();
+  }
+
+  /** ゲームプレイ中のみ表示する */
+  show() {
+    if (this._isTouch) this.container.visible = true;
+  }
+
+  /** ストーリー/タイトル画面中は非表示にする */
+  hide() {
+    this.container.visible = false;
   }
 
   _makeButton(x, y, label, onClick, isSpecial = false) {
