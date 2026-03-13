@@ -244,6 +244,7 @@ export class Player {
     this._tweenFromX = this.container.x;
     this._tweenFromY = this.container.y;
     this._tweenProgress = 1;
+    this._tweenBaseY = this.container.y;
   }
 
   move(nx, ny) {
