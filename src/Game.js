@@ -107,6 +107,15 @@ export class Game {
     } else {
       this.player.setPosition(px, py);
       this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.floor(this.player.maxHp * 0.3));
+      // カメラを新しいプレイヤー位置に即座にリセット
+      const MAP_CENTER_X = 400;
+      const MAP_CENTER_Y = 320;
+      const npx = px * 40 + 20;
+      const npy = py * 40 + 20;
+      this._camX = (npx - MAP_CENTER_X) / MAP_CENTER_X * -10;
+      this._camY = (npy - MAP_CENTER_Y) / MAP_CENTER_Y * -8;
+      this._camTargetX = this._camX;
+      this._camTargetY = this._camY;
     }
 
     const isBossFloor = this.floor >= MAX_FLOORS;
