@@ -38,6 +38,15 @@ let swipeStartX = 0;
 let swipeStartY = 0;
 const SWIPE_THRESHOLD = 25; // px
 
+// PointerEvent対応ブラウザ（モダンモバイル）：pointerdownでタイトル/ストーリー画面のタップを確実に検知
+// touchendより先にpointerdownが発火するため、Pixi.jsのイベントシステムとの干渉を避けられる
+app.view.addEventListener('pointerdown', (e) => {
+  if (game.state === 'title' || game.state === 'opening' || game.state === 'ending') {
+    gamepad.touched = false;
+    game.handleTap();
+  }
+});
+
 app.view.addEventListener('touchstart', (e) => {
   e.preventDefault();
   swipeStartX = e.touches[0].clientX;
@@ -49,9 +58,13 @@ app.view.addEventListener('touchend', (e) => {
 
   // ストーリー/タイトル画面中はゲームパッドが非表示のため、
   // あらゆるタッチ（スワイプ含む）でシーンを進める
+  // PointerEvent非対応ブラウザ（旧iOS等）向けフォールバック
   if (game.state === 'title' || game.state === 'opening' || game.state === 'ending') {
-    gamepad.touched = false;
-    game.handleTap();
+    if (!window.PointerEvent) {
+      // pointerdownが発火しない古いブラウザのみtouchendでハンドル
+      gamepad.touched = false;
+      game.handleTap();
+    }
     return;
   }
 
