@@ -132,6 +132,16 @@ export class StoryScene {
     this._counterText.x = 20;
     this._counterText.y = 18;
     this.container.addChild(this._counterText);
+
+    // ── タップオーバーレイ（画面全体をタッチ可能にする） ────────
+    this._tapOverlay = new Graphics();
+    this._tapOverlay.beginFill(0x000000, 0.001);
+    this._tapOverlay.drawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    this._tapOverlay.endFill();
+    this._tapOverlay.eventMode = 'static';
+    this._tapOverlay.cursor = 'pointer';
+    this._tapOverlay.on('pointerdown', () => this.onInput());
+    this.container.addChild(this._tapOverlay);
   }
 
   // ──────────────────────────────────────────────────────────────
@@ -175,6 +185,11 @@ export class StoryScene {
   /** キー・タップ入力を受け付ける */
   onInput() {
     if (!this.container.visible) return false;
+
+    // DOM pointerdown と Pixi.js overlay の二重発火を防ぐ
+    const now = Date.now();
+    if (this._lastInputTime && now - this._lastInputTime < 150) return false;
+    this._lastInputTime = now;
 
     if (this._type === 'title') {
       this._finishScene();
