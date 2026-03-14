@@ -62,7 +62,7 @@ export class StoryScene {
     // ── タイトル ──────────────────────────────────────────────
     this._titleText = new Text('深淵の迷宮', {
       fontFamily: PIXEL_FONT,
-      fontSize: 30,
+      fontSize: 40,
       fill: 0xffd700,
       align: 'center',
       dropShadow: true,
@@ -77,22 +77,22 @@ export class StoryScene {
 
     this._subtitleText = new Text('DUNGEON  OF  SOULS', {
       fontFamily: PIXEL_FONT,
-      fontSize: 10,
+      fontSize: 14,
       fill: 0x7777bb,
       align: 'center',
     });
     this._subtitleText.anchor.set(0.5);
     this._subtitleText.x = SCREEN_WIDTH / 2;
-    this._subtitleText.y = SCREEN_HEIGHT / 2 - 75;
+    this._subtitleText.y = SCREEN_HEIGHT / 2 - 65;
     this.container.addChild(this._subtitleText);
 
     // ── ストーリーテキスト ─────────────────────────────────────
     this._storyText = new Text('', {
       fontFamily: PIXEL_FONT,
-      fontSize: 13,
+      fontSize: 18,
       fill: 0xffffff,
       align: 'center',
-      lineHeight: 32,
+      lineHeight: 42,
       wordWrap: true,
       wordWrapWidth: SCREEN_WIDTH - 150,
     });
@@ -104,7 +104,7 @@ export class StoryScene {
     // ── プロンプト / 開始ボタン ────────────────────────────────
     this._promptText = new Text('', {
       fontFamily: PIXEL_FONT,
-      fontSize: 9,
+      fontSize: 12,
       fill: 0x8899bb,
       align: 'center',
     });
